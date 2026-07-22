@@ -1,0 +1,125 @@
+// Esquema de Voice2Text. Postgres (local embebido / prod Docker).
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+enum SubStatus {
+  NONE
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+enum TransStatus {
+  QUEUED
+  PROCESSING
+  DONE
+  ERROR
+}
+enum TransMode {
+  FAST
+  STANDARD
+  PRO
+}
+enum SourceType {
+  FILE
+  URL
+  MIC
+}
+
+model User {
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  nombre               String?
+  passwordHash         String?
+  role                 Role      @default(USER)
+  createdAt            DateTime  @default(now())
+
+  // Suscripción
+  subStatus            SubStatus @default(NONE)
+  planKey              String?   // "trial" | "premium" ...
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  currentPeriodEnd     DateTime?
+  trialEndsAt          DateTime?
+
+  transcripciones      Transcription[]
+}
+
+model Transcription {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  titulo      String      // nombre del fichero o de la URL
+  sourceType  SourceType  @default(FILE)
+  sourceUrl   String?
+  language    String      @default("auto")
+  mode        TransMode   @default(STANDARD)
+  status      TransStatus @default(QUEUED)
+  texto       String      @default("") @db.Text // texto (editable por el usuario)
+  segmentos   Json?       // [{start,end,text}] para SRT/subtítulos
+  duracionSeg Int?
+  error       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId, createdAt])
+}
+
+// Textos editables del sitio (marca, copy, CTAs…). El panel de admin edita el `value`.
+model SiteContent {
+  id        String  @id @default(cuid())
+  key       String  @unique          // p.ej. "hero.title"
+  value     String  @db.Text
+  grupo     String  @default("General") // agrupación en el admin
+  label     String                    // etiqueta legible para el admin
+  multiline Boolean @default(false)
+  orden     Int     @default(0)
+}
+
+// Planes de precios (editables en admin).
+model Plan {
+  id           String  @id @default(cuid())
+  key          String  @unique
+  nombre       String
+  precioCent   Int     // céntimos
+  moneda       String  @default("EUR")
+  periodo      String  @default("month") // month | trial | year
+  badge        String? // p.ej. "7 días" / "Más popular"
+  descripcion  String? @db.Text
+  caracteristicas Json // string[]
+  botonTexto   String  @default("Empezar")
+  stripePriceId String?
+  destacado    Boolean @default(false)
+  orden        Int     @default(0)
+  activo       Boolean @default(true)
+}
+
+// Preguntas frecuentes (editables).
+model FaqItem {
+  id       String @id @default(cuid())
+  pregunta String @db.Text
+  respuesta String @db.Text
+  orden    Int    @default(0)
+  activo   Boolean @default(true)
+}
+
+// Landings SEO (audio-a-texto, mp3-a-texto, youtube…), editables.
+model LandingPage {
+  id        String @id @default(cuid())
+  slug      String @unique
+  titulo    String // <title> / H1
+  subtitulo String @db.Text
+  cuerpo    String @db.Text // HTML/markdown sencillo
+  metaDesc  String @default("")
+  orden     Int    @default(0)
+  activo    Boolean @default(true)
+}

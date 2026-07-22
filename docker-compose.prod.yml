@@ -1,0 +1,32 @@
+# Producción en el VPS: Postgres + web.
+#   docker compose -f docker-compose.prod.yml up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: voxtext
+      POSTGRES_PASSWORD: voxtext
+      POSTGRES_DB: voxtext
+    volumes:
+      - v2tpgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://voxtext:voxtext@db:5432/voxtext?schema=public
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      NODE_ENV: production
+    depends_on: [db]
+    ports:
+      - "${APP_PORT:-3100}:3000"
+    volumes:
+      - v2tuploads:/app/uploads
+    # Crea/actualiza tablas, siembra contenido por defecto (idempotente) y arranca.
+    command: sh -c "npx prisma db push --skip-generate && (node scripts/seed.ts || true) && npm run start"
+
+volumes:
+  v2tpgdata:
+  v2tuploads:

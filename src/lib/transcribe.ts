@@ -1,0 +1,109 @@
+import { spawn } from "node:child_process";
+import { readFile, stat, mkdtemp, readdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, extname, basename } from "node:path";
+
+/**
+ * Motor de transcripción con proveedores intercambiables (env TRANSCRIBE_PROVIDER):
+ *  - mock   → texto de ejemplo (funciona sin claves; para desarrollo/demo).
+ *  - openai → API de OpenAI (Whisper). Necesita OPENAI_API_KEY. (Máx 25 MB por archivo.)
+ *  - local  → binario whisper/faster-whisper en el servidor (WHISPER_BIN).
+ * Vídeo → se extrae el audio con ffmpeg. URLs → se descargan con yt-dlp.
+ */
+
+export interface Segmento { start: number; end: number; text: string }
+export interface TranscribeResult { text: string; segments: Segmento[]; durationSec?: number }
+
+const VIDEO_EXT = new Set([".mp4", ".mov", ".mpeg", ".mpg", ".wmv", ".mkv", ".avi", ".webm"]);
+const run = (bin: string, args: string[]): Promise<{ code: number; out: string; err: string }> =>
+  new Promise((res) => {
+    const p = spawn(bin, args);
+    let out = "", err = "";
+    p.stdout.on("data", (d) => (out += d));
+    p.stderr.on("data", (d) => (err += d));
+    p.on("error", (e) => res({ code: -1, out, err: String(e) }));
+    p.on("close", (code) => res({ code: code ?? -1, out, err }));
+  });
+
+/** Descarga el audio de una URL (YouTube, etc.) con yt-dlp. Devuelve la ruta del archivo. */
+export async function descargarDeUrl(url: string): Promise<string> {
+  const ytdlp = process.env.YTDLP_BIN;
+  if (!ytdlp) throw new Error("Falta configurar YTDLP_BIN para transcribir desde URL.");
+  const dir = await mkdtemp(join(tmpdir(), "v2t-url-"));
+  const salida = join(dir, "audio.%(ext)s");
+  const r = await run(ytdlp, ["-x", "--audio-format", "mp3", "-o", salida, url]);
+  if (r.code !== 0) throw new Error("No se pudo descargar el audio de la URL.");
+  const files = await readdir(dir);
+  const audio = files.find((f) => /\.(mp3|m4a|wav|opus|ogg)$/i.test(f));
+  if (!audio) throw new Error("No se encontró audio descargado.");
+  return join(dir, audio);
+}
+
+/** Si es vídeo, extrae el audio a mp3 con ffmpeg y devuelve la nueva ruta (o la original si ya es audio). */
+async function asegurarAudio(filePath: string): Promise<string> {
+  if (!VIDEO_EXT.has(extname(filePath).toLowerCase())) return filePath;
+  const ffmpeg = process.env.FFMPEG_BIN || "ffmpeg";
+  const dir = await mkdtemp(join(tmpdir(), "v2t-a-"));
+  const out = join(dir, "audio.mp3");
+  const r = await run(ffmpeg, ["-y", "-i", filePath, "-vn", "-ac", "1", "-ar", "16000", "-b:a", "96k", out]);
+  if (r.code !== 0) throw new Error("No se pudo extraer el audio del vídeo (¿ffmpeg instalado?).");
+  return out;
+}
+
+export async function transcribe(filePath: string, opts: { language?: string; mode?: string; originalName?: string } = {}): Promise<TranscribeResult> {
+  const provider = (process.env.TRANSCRIBE_PROVIDER || "mock").toLowerCase();
+  if (provider === "mock") return mock(opts.originalName || basename(filePath));
+  const audio = await asegurarAudio(filePath);
+  if (provider === "openai") return openai(audio, opts);
+  if (provider === "local") return local(audio, opts);
+  throw new Error(`Proveedor de transcripción desconocido: ${provider}`);
+}
+
+// ---- OpenAI (Whisper) ----
+async function openai(audio: string, opts: { language?: string }): Promise<TranscribeResult> {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) throw new Error("Falta OPENAI_API_KEY.");
+  const size = (await stat(audio)).size;
+  if (size > 25 * 1024 * 1024) throw new Error("El archivo supera 25 MB (límite de la API). Usa un audio más corto o el motor local.");
+  const buf = await readFile(audio);
+  const fd = new FormData();
+  fd.append("file", new Blob([buf]), basename(audio));
+  fd.append("model", process.env.OPENAI_TRANSCRIBE_MODEL || "whisper-1");
+  fd.append("response_format", "verbose_json");
+  if (opts.language && opts.language !== "auto") fd.append("language", opts.language);
+  const r = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    method: "POST", headers: { Authorization: `Bearer ${key}` }, body: fd,
+  });
+  if (!r.ok) throw new Error(`OpenAI ${r.status}: ${(await r.text()).slice(0, 200)}`);
+  const j = await r.json() as { text: string; duration?: number; segments?: { start: number; end: number; text: string }[] };
+  return { text: j.text ?? "", segments: (j.segments ?? []).map((s) => ({ start: s.start, end: s.end, text: s.text.trim() })), durationSec: j.duration ? Math.round(j.duration) : undefined };
+}
+
+// ---- Local (whisper CLI) ----
+async function local(audio: string, opts: { language?: string }): Promise<TranscribeResult> {
+  const bin = process.env.WHISPER_BIN;
+  if (!bin) throw new Error("Falta WHISPER_BIN.");
+  const dir = await mkdtemp(join(tmpdir(), "v2t-w-"));
+  const args = [audio, "--output_format", "json", "--output_dir", dir];
+  if (opts.language && opts.language !== "auto") args.push("--language", opts.language);
+  const r = await run(bin, args);
+  if (r.code !== 0) throw new Error(`whisper local falló: ${r.err.slice(0, 200)}`);
+  const files = await readdir(dir);
+  const jsonF = files.find((f) => f.endsWith(".json"));
+  if (!jsonF) throw new Error("whisper local no generó JSON.");
+  const j = JSON.parse(await readFile(join(dir, jsonF), "utf8")) as { text: string; segments?: { start: number; end: number; text: string }[] };
+  await rm(dir, { recursive: true, force: true }).catch(() => {});
+  return { text: j.text ?? "", segments: (j.segments ?? []).map((s) => ({ start: s.start, end: s.end, text: s.text.trim() })) };
+}
+
+// ---- Mock ----
+function mock(name: string): TranscribeResult {
+  const frases = [
+    "Hola, esto es una transcripción de ejemplo generada por Voice2Text.",
+    `El archivo "${name}" se ha procesado correctamente.`,
+    "Cuando configures un motor real (OpenAI Whisper o un modelo local), aquí verás el texto real de tu audio.",
+    "Puedes editar este texto y descargarlo en TXT, DOCX, PDF o como subtítulos SRT.",
+  ];
+  const segments: Segmento[] = frases.map((f, i) => ({ start: i * 4, end: i * 4 + 4, text: f }));
+  return { text: frases.join(" "), segments, durationSec: frases.length * 4 };
+}
