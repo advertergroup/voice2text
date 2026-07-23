@@ -8,6 +8,7 @@ export async function POST(req: Request) {
   if (!user || user.role !== "ADMIN") return NextResponse.redirect(new URL("/login", base), { status: 303 });
 
   const f = await req.formData();
+  const locale = (f.get("formlocale") as string) || "es";
   // Agrupa por id: "<id>__campo".
   const porId: Record<string, Record<string, string>> = {};
   for (const [k, v] of f.entries()) {
@@ -30,5 +31,6 @@ export async function POST(req: Request) {
       },
     }).catch(() => {});
   }
-  return NextResponse.redirect(new URL("/admin/plans?saved=1", base), { status: 303 });
+  const q = locale !== "es" ? `&lang=${locale}` : "";
+  return NextResponse.redirect(new URL(`/admin/plans?saved=1${q}`, base), { status: 303 });
 }

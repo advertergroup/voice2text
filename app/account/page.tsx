@@ -14,7 +14,7 @@ export default async function Account() {
   if (!user) redirect("/login");
   const prisma = await getPrisma();
   const nTrans = await prisma.transcription.count({ where: { userId: user.id } });
-  const planName = user.planKey ? (await prisma.plan.findUnique({ where: { key: user.planKey } }))?.nombre : null;
+  const planName = user.planKey ? (await prisma.plan.findFirst({ where: { key: user.planKey, locale: "es" } }))?.nombre : null;
 
   return (
     <AppShell brand={t(c, "brand.name")} email={user.email} role={user.role} active="account">

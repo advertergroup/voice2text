@@ -3,26 +3,30 @@ import { loadContent, t } from "../../../src/lib/content.ts";
 import { getCurrentUser } from "../../../src/auth/session.ts";
 import { getPrisma } from "../../../src/db/client.ts";
 import { AppShell } from "../../../src/ui/AppShell.tsx";
-import { AdminTabs } from "../../../src/ui/AdminTabs.tsx";
+import { AdminTabs, AdminLangBar } from "../../../src/ui/AdminTabs.tsx";
+import { isLocale, localeInfo, DEFAULT_LOCALE } from "../../../src/lib/locale.ts";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminLandings({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
   const sp = await searchParams;
+  const lang = isLocale(sp.lang) ? sp.lang! : DEFAULT_LOCALE;
   const c = await loadContent();
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (user.role !== "ADMIN") redirect("/dashboard");
   const prisma = await getPrisma();
-  const items = await prisma.landingPage.findMany({ orderBy: { orden: "asc" } });
+  const items = await prisma.landingPage.findMany({ where: { locale: lang }, orderBy: { orden: "asc" } });
 
   return (
     <AppShell brand={t(c, "brand.name")} email={user.email} role={user.role} active="admin">
       <h1 style={{ fontSize: 26, marginTop: 0 }}>Administración</h1>
-      <AdminTabs active="landings" />
-      {sp.saved && <div className="ok">✓ Landings guardadas.</div>}
-      <p className="muted" style={{ fontSize: 14 }}>Páginas SEO en <code>/l/&lt;slug&gt;</code>. Usa <code>{"{brand}"}</code> en el cuerpo. HTML permitido.</p>
+      <AdminTabs active="landings" lang={lang} />
+      <AdminLangBar base="/admin/landings" lang={lang} />
+      {sp.saved && <div className="ok">✓ Landings guardadas en {localeInfo(lang).native}.</div>}
+      <p className="muted" style={{ fontSize: 14 }}>Páginas SEO en <code>/l/&lt;slug&gt;</code> (el slug es común; el contenido es por idioma). Usa <code>{"{brand}"}</code> en el cuerpo. HTML permitido.</p>
       <form action="/api/admin/landings" method="post">
+        <input type="hidden" name="formlocale" value={lang} />
         {items.map((it: any) => (
           <div className="card" key={it.id} style={{ marginBottom: 16 }}>
             <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>/l/{it.slug}</div>

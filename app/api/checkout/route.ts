@@ -11,7 +11,7 @@ export async function GET(req: Request) {
   if (!user) return NextResponse.redirect(new URL("/register", base), { status: 303 });
   const planKey = new URL(req.url).searchParams.get("plan") || "premium";
   const prisma = await getPrisma();
-  const plan = await prisma.plan.findUnique({ where: { key: planKey } });
+  const plan = await prisma.plan.findFirst({ where: { key: planKey, locale: "es" } });
   if (!plan) return NextResponse.redirect(new URL("/pricing", base), { status: 303 });
 
   // Sin Stripe configurado → activación mock (para probar el funnel sin claves).

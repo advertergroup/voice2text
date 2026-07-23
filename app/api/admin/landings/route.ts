@@ -8,6 +8,7 @@ export async function POST(req: Request) {
   if (!user || user.role !== "ADMIN") return NextResponse.redirect(new URL("/login", base), { status: 303 });
 
   const f = await req.formData();
+  const locale = (f.get("formlocale") as string) || "es";
   const porId: Record<string, Record<string, string>> = {};
   for (const [k, v] of f.entries()) {
     if (typeof v !== "string") continue;
@@ -18,5 +19,6 @@ export async function POST(req: Request) {
   for (const [id, d] of Object.entries(porId)) {
     await prisma.landingPage.update({ where: { id }, data: { titulo: d.titulo, subtitulo: d.subtitulo, cuerpo: d.cuerpo, metaDesc: d.metaDesc || "", activo: d.activo === "on" } }).catch(() => {});
   }
-  return NextResponse.redirect(new URL("/admin/landings?saved=1", base), { status: 303 });
+  const q = locale !== "es" ? `&lang=${locale}` : "";
+  return NextResponse.redirect(new URL(`/admin/landings?saved=1${q}`, base), { status: 303 });
 }

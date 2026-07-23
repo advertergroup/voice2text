@@ -3,25 +3,30 @@ import { loadContent, t } from "../../../src/lib/content.ts";
 import { getCurrentUser } from "../../../src/auth/session.ts";
 import { getPrisma } from "../../../src/db/client.ts";
 import { AppShell } from "../../../src/ui/AppShell.tsx";
-import { AdminTabs } from "../../../src/ui/AdminTabs.tsx";
+import { AdminTabs, AdminLangBar } from "../../../src/ui/AdminTabs.tsx";
+import { isLocale, localeInfo, DEFAULT_LOCALE } from "../../../src/lib/locale.ts";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPlans({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
   const sp = await searchParams;
+  const lang = isLocale(sp.lang) ? sp.lang! : DEFAULT_LOCALE;
   const c = await loadContent();
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (user.role !== "ADMIN") redirect("/dashboard");
   const prisma = await getPrisma();
-  const planes = await prisma.plan.findMany({ orderBy: { orden: "asc" } });
+  const planes = await prisma.plan.findMany({ where: { locale: lang }, orderBy: { orden: "asc" } });
 
   return (
     <AppShell brand={t(c, "brand.name")} email={user.email} role={user.role} active="admin">
       <h1 style={{ fontSize: 26, marginTop: 0 }}>Administración</h1>
-      <AdminTabs active="plans" />
-      {sp.saved && <div className="ok">✓ Planes guardados.</div>}
+      <AdminTabs active="plans" lang={lang} />
+      <AdminLangBar base="/admin/plans" lang={lang} />
+      {sp.saved && <div className="ok">✓ Planes guardados en {localeInfo(lang).native}.</div>}
+      <p className="muted" style={{ fontSize: 13 }}>El precio es común a todos los idiomas; los textos (nombre, descripción, características, botón) son por idioma.</p>
       <form action="/api/admin/plans" method="post">
+        <input type="hidden" name="formlocale" value={lang} />
         {planes.map((p: any) => (
           <div className="card" key={p.id} style={{ marginBottom: 18 }}>
             <h3 style={{ marginTop: 0 }}>{p.nombre} <span className="muted" style={{ fontSize: 13, fontWeight: 400 }}>({p.key})</span></h3>

@@ -75,20 +75,26 @@ model Transcription {
 }
 
 // Textos editables del sitio (marca, copy, CTAs…). El panel de admin edita el `value`.
+// Una fila por (clave, idioma) → toda la copy es multi-idioma.
 model SiteContent {
   id        String  @id @default(cuid())
-  key       String  @unique          // p.ej. "hero.title"
+  key       String                    // p.ej. "hero.title"
+  locale    String  @default("es")    // es | en | pt | fr | de | it | nl | pl
   value     String  @db.Text
   grupo     String  @default("General") // agrupación en el admin
   label     String                    // etiqueta legible para el admin
   multiline Boolean @default(false)
   orden     Int     @default(0)
+
+  @@unique([key, locale])
+  @@index([locale])
 }
 
-// Planes de precios (editables en admin).
+// Planes de precios (editables en admin). Una fila por (key, idioma); el precio es el mismo.
 model Plan {
   id           String  @id @default(cuid())
-  key          String  @unique
+  key          String
+  locale       String  @default("es")
   nombre       String
   precioCent   Int     // céntimos
   moneda       String  @default("EUR")
@@ -101,25 +107,35 @@ model Plan {
   destacado    Boolean @default(false)
   orden        Int     @default(0)
   activo       Boolean @default(true)
+
+  @@unique([key, locale])
+  @@index([locale])
 }
 
-// Preguntas frecuentes (editables).
+// Preguntas frecuentes (editables). Una fila por idioma.
 model FaqItem {
   id       String @id @default(cuid())
+  locale   String @default("es")
   pregunta String @db.Text
   respuesta String @db.Text
   orden    Int    @default(0)
   activo   Boolean @default(true)
+
+  @@index([locale])
 }
 
-// Landings SEO (audio-a-texto, mp3-a-texto, youtube…), editables.
+// Landings SEO (audio-a-texto, mp3-a-texto, youtube…), editables. Una fila por (slug, idioma).
 model LandingPage {
   id        String @id @default(cuid())
-  slug      String @unique
+  slug      String
+  locale    String @default("es")
   titulo    String // <title> / H1
   subtitulo String @db.Text
   cuerpo    String @db.Text // HTML/markdown sencillo
   metaDesc  String @default("")
   orden     Int    @default(0)
   activo    Boolean @default(true)
+
+  @@unique([slug, locale])
+  @@index([locale])
 }

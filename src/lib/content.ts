@@ -1,4 +1,6 @@
 import { getPrisma } from "../db/client.ts";
+import { DEFAULT_LOCALE, isLocale } from "./locale.ts";
+import { TRANSLATIONS } from "./translations.generated.ts";
 
 /**
  * Textos editables del sitio. DEFAULT_CONTENT son los valores por defecto (clon del copy de
@@ -83,20 +85,60 @@ export const DEFAULT_CONTENT: ContentDef[] = [
   { key: "legal.help.title", grupo: "Legales", label: "Ayuda · título", value: "Ayuda y soporte", orden: 5 },
   { key: "legal.help.body", grupo: "Legales", label: "Ayuda · cuerpo (HTML)", value: "<p>¿Necesitas ayuda? Escríbenos y te respondemos lo antes posible. Edita este texto y el email de contacto en el panel de administración.</p>", multiline: true, orden: 6 },
   { key: "contact.email", grupo: "Legales", label: "Email de contacto/soporte", value: "soporte@voice2text.local", orden: 7 },
+
+  // ---- Acceso (login / registro) ----
+  { key: "auth.login.title", grupo: "Acceso", label: "Login · título", value: "Inicia sesión", orden: 1 },
+  { key: "auth.login.submit", grupo: "Acceso", label: "Login · botón", value: "Entrar", orden: 2 },
+  { key: "auth.login.email", grupo: "Acceso", label: "Login · etiqueta email", value: "Email", orden: 3 },
+  { key: "auth.login.password", grupo: "Acceso", label: "Login · etiqueta contraseña", value: "Contraseña", orden: 4 },
+  { key: "auth.login.noAccount", grupo: "Acceso", label: "Login · enlace registro", value: "¿No tienes cuenta? Regístrate", orden: 5 },
+  { key: "auth.register.title", grupo: "Acceso", label: "Registro · título", value: "Crea tu cuenta gratis", orden: 6 },
+  { key: "auth.register.submit", grupo: "Acceso", label: "Registro · botón", value: "Crear cuenta", orden: 7 },
+  { key: "auth.register.name", grupo: "Acceso", label: "Registro · etiqueta nombre", value: "Nombre", orden: 8 },
+  { key: "auth.register.haveAccount", grupo: "Acceso", label: "Registro · enlace login", value: "¿Ya tienes cuenta? Inicia sesión", orden: 9 },
+
+  // ---- Selector de idioma ----
+  { key: "lang.label", grupo: "General", label: "Selector de idioma · etiqueta", value: "Idioma", orden: 1 },
 ];
 
-/** Carga todos los textos (defaults + overrides de BD) con los placeholders resueltos. */
-export async function loadContent(): Promise<Record<string, string>> {
+/**
+ * Carga todos los textos para un idioma, con los placeholders resueltos.
+ * Capas (de menor a mayor prioridad):
+ *   1) DEFAULT_CONTENT (español, base — garantiza que ninguna clave quede vacía)
+ *   2) TRANSLATIONS[locale] (traducciones por defecto en código, si el idioma no es el base)
+ *   3) SiteContent de la BD para ese `locale` (lo que el admin haya editado)
+ */
+export async function loadContent(locale: string = DEFAULT_LOCALE): Promise<Record<string, string>> {
+  const lang = isLocale(locale) ? locale : DEFAULT_LOCALE;
   const map: Record<string, string> = {};
+  // 1) base español
   for (const d of DEFAULT_CONTENT) map[d.key] = d.value;
+  // 2) traducciones en código
+  if (lang !== DEFAULT_LOCALE) {
+    const tr = TRANSLATIONS[lang] || {};
+    for (const k of Object.keys(tr)) map[k] = tr[k]!;
+  }
+  // 3) overrides de BD para ese idioma
   try {
     const prisma = await getPrisma();
-    const rows = await prisma.siteContent.findMany();
+    const rows = await prisma.siteContent.findMany({ where: { locale: lang } });
     for (const r of rows as { key: string; value: string }[]) map[r.key] = r.value;
-  } catch { /* BD no disponible → usa defaults */ }
+  } catch { /* BD no disponible → usa defaults/traducciones */ }
   const brand = map["brand.name"] || "Voice2Text";
   for (const k of Object.keys(map)) map[k] = (map[k] ?? "").replaceAll("{brand}", brand);
   return map;
+}
+
+/** Lee el idioma actual (lo inyecta el middleware en la cabecera `x-locale`). Server-only.
+ *  Importa `next/headers` de forma diferida para no romper scripts Node (seed) que sólo usan DEFAULT_CONTENT. */
+export async function getLocale(): Promise<string> {
+  try {
+    const { headers } = await import("next/headers");
+    const h = await headers();
+    const l = h.get("x-locale");
+    if (isLocale(l)) return l!;
+  } catch { /* fuera de request */ }
+  return DEFAULT_LOCALE;
 }
 
 /** Helper: t(map, "clave") con fallback vacío. */

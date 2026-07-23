@@ -1,12 +1,15 @@
-import { loadContent, t } from "../src/lib/content.ts";
+import { loadContent, t, getLocale } from "../src/lib/content.ts";
 import { getCurrentUser } from "../src/auth/session.ts";
 import { Nav, Footer } from "../src/ui/site.tsx";
+import { localePath } from "../src/lib/locale.ts";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const c = await loadContent();
+  const locale = await getLocale();
+  const c = await loadContent(locale);
   const user = await getCurrentUser();
+  const reg = user ? "/dashboard" : localePath(locale, "/register");
 
   const feat = [
     ["⚡", "feat.f1"], ["🌍", "feat.f2"], ["📄", "feat.f3"], ["🔒", "feat.f4"],
@@ -16,16 +19,16 @@ export default async function Home() {
 
   return (
     <>
-      <Nav c={c} user={user} />
+      <Nav c={c} user={user} locale={locale} />
 
       {/* Hero */}
       <div className="hero">
         <div className="container">
           <h1>{t(c, "hero.title")}</h1>
           <p className="sub">{t(c, "hero.subtitle")}</p>
-          <a href={user ? "/dashboard" : "/register"} className="btn btn-primary btn-lg">{t(c, "hero.cta")}</a>
+          <a href={reg} className="btn btn-primary btn-lg">{t(c, "hero.cta")}</a>
 
-          <a href={user ? "/dashboard" : "/register"} className="dropzone" style={{ display: "block" }}>
+          <a href={reg} className="dropzone" style={{ display: "block" }}>
             <div className="ico">📤</div>
             <div style={{ fontWeight: 600, marginTop: 8 }}>{t(c, "hero.dropzone")}</div>
             <div style={{ marginTop: 16 }}><span className="btn btn-primary">{t(c, "hero.selectFiles")}</span></div>
@@ -90,12 +93,12 @@ export default async function Home() {
           <div className="cta-band">
             <h2>{t(c, "cta.title")}</h2>
             <p>{t(c, "cta.subtitle")}</p>
-            <a href={user ? "/dashboard" : "/register"} className="btn btn-lg">{t(c, "cta.button")}</a>
+            <a href={reg} className="btn btn-lg">{t(c, "cta.button")}</a>
           </div>
         </div>
       </section>
 
-      <Footer c={c} />
+      <Footer c={c} locale={locale} />
     </>
   );
 }

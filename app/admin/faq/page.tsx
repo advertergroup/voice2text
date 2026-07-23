@@ -3,25 +3,29 @@ import { loadContent, t } from "../../../src/lib/content.ts";
 import { getCurrentUser } from "../../../src/auth/session.ts";
 import { getPrisma } from "../../../src/db/client.ts";
 import { AppShell } from "../../../src/ui/AppShell.tsx";
-import { AdminTabs } from "../../../src/ui/AdminTabs.tsx";
+import { AdminTabs, AdminLangBar } from "../../../src/ui/AdminTabs.tsx";
+import { isLocale, localeInfo, DEFAULT_LOCALE } from "../../../src/lib/locale.ts";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminFaq({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
   const sp = await searchParams;
+  const lang = isLocale(sp.lang) ? sp.lang! : DEFAULT_LOCALE;
   const c = await loadContent();
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (user.role !== "ADMIN") redirect("/dashboard");
   const prisma = await getPrisma();
-  const items = await prisma.faqItem.findMany({ orderBy: { orden: "asc" } });
+  const items = await prisma.faqItem.findMany({ where: { locale: lang }, orderBy: { orden: "asc" } });
 
   return (
     <AppShell brand={t(c, "brand.name")} email={user.email} role={user.role} active="admin">
       <h1 style={{ fontSize: 26, marginTop: 0 }}>Administración</h1>
-      <AdminTabs active="faq" />
-      {sp.saved && <div className="ok">✓ FAQ guardada.</div>}
+      <AdminTabs active="faq" lang={lang} />
+      <AdminLangBar base="/admin/faq" lang={lang} />
+      {sp.saved && <div className="ok">✓ FAQ guardada en {localeInfo(lang).native}.</div>}
       <form action="/api/admin/faq" method="post">
+        <input type="hidden" name="formlocale" value={lang} />
         {items.map((it: any) => (
           <div className="card" key={it.id} style={{ marginBottom: 14 }}>
             <div className="field"><label>Pregunta</label><input name={`${it.id}__pregunta`} defaultValue={it.pregunta} /></div>
