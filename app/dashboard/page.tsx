@@ -12,16 +12,27 @@ const ESTADO: Record<string, { cls: string; label: string }> = {
   QUEUED: { cls: "queued", label: "En cola" }, ERROR: { cls: "err", label: "Error" },
 };
 
-export default async function Dashboard() {
+const ERRORES: Record<string, string> = {
+  nofile: "Sube un archivo o pega una URL.",
+  badtype: "Ese archivo no es un audio o vídeo válido. Formatos aceptados: MP3, WAV, M4A, AAC, OGG, MP4, MOV, MKV, WEBM…",
+  toobig: "El archivo es demasiado grande.",
+  infected: "El archivo se ha rechazado por seguridad: el antivirus detectó una amenaza.",
+};
+
+export default async function Dashboard({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
+  const sp = await searchParams;
   const c = await loadContent();
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   const prisma = await getPrisma();
   const items = await prisma.transcription.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 50 });
 
+  const errMsg = sp.error ? ERRORES[sp.error] : null;
+
   return (
     <AppShell brand={t(c, "brand.name")} email={user.email} role={user.role} active="dash">
       <h1 style={{ fontSize: 26, marginTop: 0 }}>Nueva transcripción</h1>
+      {errMsg && <div className="err" style={{ marginBottom: 16 }}>⚠️ {errMsg}{sp.error === "toobig" && sp.max ? ` (máximo ${sp.max} MB)` : ""}</div>}
       <div className="card" style={{ padding: 24, marginBottom: 30 }}>
         <Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} />
       </div>

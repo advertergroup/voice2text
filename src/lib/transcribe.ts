@@ -25,38 +25,43 @@ const run = (bin: string, args: string[]): Promise<{ code: number; out: string; 
     p.on("close", (code) => res({ code: code ?? -1, out, err }));
   });
 
-/** Descarga el audio de una URL (YouTube, etc.) con yt-dlp. Devuelve la ruta del archivo. */
-export async function descargarDeUrl(url: string): Promise<string> {
+/** Descarga el audio de una URL (YouTube, etc.) con yt-dlp. Devuelve la ruta y su carpeta temporal (para borrarla). */
+export async function descargarDeUrl(url: string): Promise<{ path: string; tmp: string }> {
   const ytdlp = process.env.YTDLP_BIN;
   if (!ytdlp) throw new Error("Falta configurar YTDLP_BIN para transcribir desde URL.");
+  if (!/^https?:\/\//i.test(url)) throw new Error("URL no válida.");
   const dir = await mkdtemp(join(tmpdir(), "v2t-url-"));
   const salida = join(dir, "audio.%(ext)s");
   const r = await run(ytdlp, ["-x", "--audio-format", "mp3", "-o", salida, url]);
-  if (r.code !== 0) throw new Error("No se pudo descargar el audio de la URL.");
+  if (r.code !== 0) { await rm(dir, { recursive: true, force: true }).catch(() => {}); throw new Error("No se pudo descargar el audio de la URL."); }
   const files = await readdir(dir);
   const audio = files.find((f) => /\.(mp3|m4a|wav|opus|ogg)$/i.test(f));
-  if (!audio) throw new Error("No se encontró audio descargado.");
-  return join(dir, audio);
+  if (!audio) { await rm(dir, { recursive: true, force: true }).catch(() => {}); throw new Error("No se encontró audio descargado."); }
+  return { path: join(dir, audio), tmp: dir };
 }
 
-/** Si es vídeo, extrae el audio a mp3 con ffmpeg y devuelve la nueva ruta (o la original si ya es audio). */
-async function asegurarAudio(filePath: string): Promise<string> {
-  if (!VIDEO_EXT.has(extname(filePath).toLowerCase())) return filePath;
+/** Si es vídeo, extrae el audio a mp3 con ffmpeg. Devuelve la ruta y el temporal a limpiar (si lo hubo). */
+async function asegurarAudio(filePath: string): Promise<{ path: string; tmp?: string }> {
+  if (!VIDEO_EXT.has(extname(filePath).toLowerCase())) return { path: filePath };
   const ffmpeg = process.env.FFMPEG_BIN || "ffmpeg";
   const dir = await mkdtemp(join(tmpdir(), "v2t-a-"));
   const out = join(dir, "audio.mp3");
   const r = await run(ffmpeg, ["-y", "-i", filePath, "-vn", "-ac", "1", "-ar", "16000", "-b:a", "96k", out]);
-  if (r.code !== 0) throw new Error("No se pudo extraer el audio del vídeo (¿ffmpeg instalado?).");
-  return out;
+  if (r.code !== 0) { await rm(dir, { recursive: true, force: true }).catch(() => {}); throw new Error("No se pudo extraer el audio del vídeo (¿ffmpeg instalado?)."); }
+  return { path: out, tmp: dir };
 }
 
 export async function transcribe(filePath: string, opts: { language?: string; mode?: string; originalName?: string } = {}): Promise<TranscribeResult> {
   const provider = (process.env.TRANSCRIBE_PROVIDER || "mock").toLowerCase();
   if (provider === "mock") return mock(opts.originalName || basename(filePath));
-  const audio = await asegurarAudio(filePath);
-  if (provider === "openai") return openai(audio, opts);
-  if (provider === "local") return local(audio, opts);
-  throw new Error(`Proveedor de transcripción desconocido: ${provider}`);
+  const { path: audio, tmp } = await asegurarAudio(filePath);
+  try {
+    if (provider === "openai") return await openai(audio, opts);
+    if (provider === "local") return await local(audio, opts);
+    throw new Error(`Proveedor de transcripción desconocido: ${provider}`);
+  } finally {
+    if (tmp) await rm(tmp, { recursive: true, force: true }).catch(() => {}); // borra el audio extraído del vídeo
+  }
 }
 
 // ---- OpenAI (Whisper) ----
