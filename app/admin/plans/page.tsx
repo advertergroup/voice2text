@@ -24,6 +24,7 @@ export default async function AdminPlans({ searchParams }: { searchParams: Promi
       <AdminTabs active="plans" lang={lang} />
       <AdminLangBar base="/admin/plans" lang={lang} />
       {sp.saved && <div className="ok">✓ Planes guardados en {localeInfo(lang).native}.</div>}
+      {sp.error === "save" && <div className="err">⚠️ Hubo un error al guardar algún plan. Revisa los datos (precio válido, etc.) e inténtalo de nuevo.</div>}
       <p className="muted" style={{ fontSize: 13 }}>El precio es común a todos los idiomas; los textos (nombre, descripción, características, botón) son por idioma.</p>
       <form action="/api/admin/plans" method="post">
         <input type="hidden" name="formlocale" value={lang} />
@@ -39,6 +40,7 @@ export default async function AdminPlans({ searchParams }: { searchParams: Promi
               <div className="field"><label>Etiqueta (badge)</label><input name={`${p.id}__badge`} defaultValue={p.badge || ""} /></div>
               <div className="field"><label>Texto del botón</label><input name={`${p.id}__botonTexto`} defaultValue={p.botonTexto} /></div>
               <div className="field"><label>Stripe Price ID</label><input name={`${p.id}__stripePriceId`} defaultValue={p.stripePriceId || ""} placeholder="price_..." /></div>
+              <div className="field"><label>Kunfupay Plan ID</label><input name={`${p.id}__kunfupayPlanId`} defaultValue={p.kunfupayPlanId || ""} placeholder="paymentPlanId" /></div>
             </div>
             <div className="field"><label>Descripción</label><textarea name={`${p.id}__descripcion`} rows={2} defaultValue={p.descripcion || ""} /></div>
             <div className="field"><label>Características (una por línea)</label><textarea name={`${p.id}__caracteristicas`} rows={5} defaultValue={(p.caracteristicas as string[]).join("\n")} /></div>

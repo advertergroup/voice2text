@@ -48,6 +48,9 @@ model User {
   planKey              String?   // "trial" | "premium" ...
   stripeCustomerId     String?
   stripeSubscriptionId String?
+  kunfupaySubscriptionId String? // id de suscripción en Kunfupay (de los webhooks)
+  kunfupaySessionId    String?   // id de la sesión de checkout creada
+  subEventAt           DateTime? // timestamp del último webhook aplicado (ignora eventos antiguos/fuera de orden)
   currentPeriodEnd     DateTime?
   trialEndsAt          DateTime?
 
@@ -104,6 +107,7 @@ model Plan {
   caracteristicas Json // string[]
   botonTexto   String  @default("Empezar")
   stripePriceId String?
+  kunfupayPlanId String? // paymentPlanId del plan recurrente en Kunfupay
   destacado    Boolean @default(false)
   orden        Int     @default(0)
   activo       Boolean @default(true)

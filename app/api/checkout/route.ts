@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getPrisma } from "../../../src/db/client.ts";
 import { getCurrentUser } from "../../../src/auth/session.ts";
 import { tieneStripe, getStripe } from "../../../src/lib/stripe.ts";
+import { activeProvider, tieneKunfupay, createSubscriptionSession } from "../../../src/lib/kunfupay.ts";
 
 export const runtime = "nodejs";
 
@@ -14,32 +15,60 @@ export async function GET(req: Request) {
   const plan = await prisma.plan.findFirst({ where: { key: planKey, locale: "es" } });
   if (!plan) return NextResponse.redirect(new URL("/pricing", base), { status: 303 });
 
-  // Sin Stripe configurado → activación mock (para probar el funnel sin claves).
-  if (!tieneStripe() || !plan.stripePriceId) {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { subStatus: plan.periodo === "trial" ? "TRIAL" : "ACTIVE", planKey: plan.key,
-        trialEndsAt: plan.periodo === "trial" ? new Date(Date.now() + 7 * 864e5) : null,
-        currentPeriodEnd: new Date(Date.now() + 30 * 864e5) },
-    });
-    return NextResponse.redirect(new URL("/dashboard?activated=1", base), { status: 303 });
+  const provider = activeProvider();
+  const okUrl = new URL("/dashboard?paid=1", base).toString();
+  const cancelUrl = new URL("/pricing", base).toString();
+  const configError = () => NextResponse.redirect(new URL("/pricing?error=config", base), { status: 303 });
+
+  // ---- Kunfupay: crea una sesión de suscripción y redirige al checkout ----
+  if (provider === "kunfupay") {
+    if (!(tieneKunfupay() && process.env.KUNFUPAY_PRODUCT_ID && plan.kunfupayPlanId)) return configError();
+    try {
+      const session = await createSubscriptionSession({
+        productId: process.env.KUNFUPAY_PRODUCT_ID,
+        paymentPlanId: plan.kunfupayPlanId,
+        customerId: user.id,                 // = nuestro user.id → llega en los webhooks
+        customerEmail: user.email,
+        externalReference: user.id,
+        successUrl: okUrl,
+        cancelUrl,
+        metadata: { userId: user.id, planKey: plan.key },
+      });
+      await prisma.user.update({ where: { id: user.id }, data: { kunfupaySessionId: session.id, planKey: plan.key } }).catch(() => {});
+      return NextResponse.redirect(session.checkoutUrl, { status: 303 });
+    } catch {
+      return NextResponse.redirect(new URL(`/pricing?error=pago`, base), { status: 303 });
+    }
   }
 
-  // Con Stripe → sesión de checkout de suscripción.
-  const stripe = await getStripe();
-  let customerId = user.stripeCustomerId;
-  if (!customerId) {
-    const cust = await stripe.customers.create({ email: user.email, name: user.nombre || undefined });
-    customerId = cust.id;
-    await prisma.user.update({ where: { id: user.id }, data: { stripeCustomerId: customerId } });
+  // ---- Stripe ----
+  if (provider === "stripe") {
+    if (!(tieneStripe() && plan.stripePriceId)) return configError();
+    const stripe = await getStripe();
+    let customerId = user.stripeCustomerId;
+    if (!customerId) {
+      const cust = await stripe.customers.create({ email: user.email, name: user.nombre || undefined });
+      customerId = cust.id;
+      await prisma.user.update({ where: { id: user.id }, data: { stripeCustomerId: customerId } });
+    }
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: customerId,
+      line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+      success_url: okUrl,
+      cancel_url: cancelUrl,
+      metadata: { userId: user.id, planKey: plan.key },
+    });
+    return NextResponse.redirect(session.url!, { status: 303 });
   }
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    customer: customerId,
-    line_items: [{ price: plan.stripePriceId, quantity: 1 }],
-    success_url: `${process.env.APP_URL}/dashboard?paid=1`,
-    cancel_url: `${process.env.APP_URL}/pricing`,
-    metadata: { userId: user.id, planKey: plan.key },
+
+  // ---- provider === "mock" (SOLO): activación de prueba para el funnel sin pasarela.
+  // Nunca se llega aquí con una pasarela real activa → no se regala acceso de pago.
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { subStatus: plan.periodo === "trial" ? "TRIAL" : "ACTIVE", planKey: plan.key,
+      trialEndsAt: plan.periodo === "trial" ? new Date(Date.now() + 7 * 864e5) : null,
+      currentPeriodEnd: new Date(Date.now() + 30 * 864e5) },
   });
-  return NextResponse.redirect(session.url!, { status: 303 });
+  return NextResponse.redirect(new URL("/dashboard?activated=1", base), { status: 303 });
 }

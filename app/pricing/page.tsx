@@ -6,7 +6,8 @@ import { localePath, DEFAULT_LOCALE } from "../../src/lib/locale.ts";
 
 export const dynamic = "force-dynamic";
 
-export default async function Pricing() {
+export default async function Pricing({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
+  const sp = await searchParams;
   const locale = await getLocale();
   const c = await loadContent(locale);
   const user = await getCurrentUser();
@@ -38,6 +39,8 @@ export default async function Pricing() {
       </div>
       <section style={{ paddingTop: 20 }}>
         <div className="container">
+          {sp.error === "pago" && <div className="err" style={{ marginBottom: 16 }}>⚠️ No se pudo iniciar el pago. Inténtalo de nuevo en unos minutos.</div>}
+          {sp.error === "config" && <div className="err" style={{ marginBottom: 16 }}>⚠️ Este plan aún no está disponible para pago. Vuelve a intentarlo pronto.</div>}
           <div className="plans">
             {planes.map((p: any) => (
               <div className={"plan" + (p.destacado ? " top" : "")} key={p.id}>

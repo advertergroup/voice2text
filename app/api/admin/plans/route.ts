@@ -19,18 +19,27 @@ export async function POST(req: Request) {
     (porId[id] ??= {})[campo] = v;
   }
   const prisma = await getPrisma();
+  let fail = false;
   for (const [id, d] of Object.entries(porId)) {
-    await prisma.plan.update({
-      where: { id },
-      data: {
-        nombre: d.nombre, periodo: d.periodo, badge: d.badge || null, botonTexto: d.botonTexto,
-        stripePriceId: d.stripePriceId || null, descripcion: d.descripcion || null,
-        precioCent: Math.round(parseFloat(d.precioEur || "0") * 100),
-        caracteristicas: (d.caracteristicas || "").split("\n").map((s) => s.trim()).filter(Boolean),
-        destacado: d.destacado === "on", activo: d.activo === "on",
-      },
-    }).catch(() => {});
+    try {
+      const updated = await prisma.plan.update({
+        where: { id },
+        data: {
+          nombre: d.nombre, periodo: d.periodo, badge: d.badge || null, botonTexto: d.botonTexto,
+          stripePriceId: d.stripePriceId || null, kunfupayPlanId: d.kunfupayPlanId || null,
+          descripcion: d.descripcion || null,
+          precioCent: Math.round(parseFloat(d.precioEur || "0") * 100),
+          caracteristicas: (d.caracteristicas || "").split("\n").map((s) => s.trim()).filter(Boolean),
+          destacado: d.destacado === "on", activo: d.activo === "on",
+        },
+      });
+      // Los IDs de pasarela y el precio son COMUNES a todos los idiomas del mismo plan → propagar.
+      await prisma.plan.updateMany({
+        where: { key: updated.key },
+        data: { kunfupayPlanId: d.kunfupayPlanId || null, stripePriceId: d.stripePriceId || null, precioCent: updated.precioCent },
+      });
+    } catch { fail = true; }
   }
   const q = locale !== "es" ? `&lang=${locale}` : "";
-  return NextResponse.redirect(new URL(`/admin/plans?saved=1${q}`, base), { status: 303 });
+  return NextResponse.redirect(new URL(`/admin/plans?${fail ? "error=save" : "saved=1"}${q}`, base), { status: 303 });
 }
