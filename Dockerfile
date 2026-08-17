@@ -7,9 +7,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl ca-certificates ffmpeg python3 python3-pip \
   && rm -rf /var/lib/apt/lists/*
 
-# Motor de transcripción local GRATIS (faster-whisper vía CLI compatible con openai-whisper).
-# El modelo se descarga en primer uso y persiste en el volumen /root/.cache.
-RUN pip3 install --no-cache-dir --break-system-packages whisper-ctranslate2
+# Motor de transcripción local GRATIS (faster-whisper) + yt-dlp (transcribir desde URL/YouTube).
+# El modelo de Whisper se descarga en primer uso y persiste en el volumen /root/.cache.
+RUN pip3 install --no-cache-dir --break-system-packages whisper-ctranslate2 yt-dlp
 
 ENV NODE_ENV=production
 
