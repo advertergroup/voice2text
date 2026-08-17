@@ -4,7 +4,7 @@ import { DEFAULT_LOCALE } from "../lib/locale.ts";
 type C = Record<string, string>;
 export interface TrView {
   id: string; titulo: string; mode: string; language: string; status: string;
-  locked: boolean; preview: string; texto: string; previewSeg: number; duracionSeg: number | null; fileDeleted: boolean;
+  locked: boolean; preview: string; texto: string; previewSeg: number; duracionSeg: number | null; fileDeleted: boolean; error?: string | null;
 }
 
 const fmtDur = (s?: number | null) => (!s ? "" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`);
@@ -29,7 +29,7 @@ export function Resultado({ tr, precio, ctaHref }: { tr: TrView; c?: C; locale?:
           <p className="muted">Transcribiendo el inicio… esta página se actualiza sola.</p>
         </div>
       )}
-      {tr.status === "ERROR" && <div className="err">No se pudo transcribir. Prueba con otro archivo o inténtalo de nuevo.</div>}
+      {tr.status === "ERROR" && <div className="err">{tr.error || "No se pudo transcribir. Prueba con otro archivo o inténtalo de nuevo."}</div>}
 
       {tr.status === "DONE" && !tr.locked && <Editor id={tr.id} initial={tr.texto} />}
 

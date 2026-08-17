@@ -50,8 +50,19 @@ export async function descargarDeUrl(url: string): Promise<{ path: string; tmp: 
   if (!/^https?:\/\//i.test(url)) throw new Error("URL no válida.");
   const dir = await mkdtemp(join(tmpdir(), "v2t-url-"));
   const salida = join(dir, "audio.%(ext)s");
-  const r = await run(ytdlp, ["-x", "--audio-format", "mp3", "-o", salida, url]);
-  if (r.code !== 0) { await rm(dir, { recursive: true, force: true }).catch(() => {}); throw new Error("No se pudo descargar el audio de la URL."); }
+  const args = ["-x", "--audio-format", "mp3", "--no-playlist", "--no-warnings", "-o", salida];
+  if (process.env.YTDLP_COOKIES) args.push("--cookies", process.env.YTDLP_COOKIES);      // cookies YouTube (Netscape)
+  if (process.env.YTDLP_PROXY) args.push("--proxy", process.env.YTDLP_PROXY);              // proxy residencial
+  if (process.env.YTDLP_ARGS) args.push(...process.env.YTDLP_ARGS.split(" ").filter(Boolean));
+  args.push(url);
+  const r = await run(ytdlp, args);
+  if (r.code !== 0) {
+    await rm(dir, { recursive: true, force: true }).catch(() => {});
+    const bloqueo = /confirm you.?re not a bot|sign in/i.test(r.err || "");
+    throw new Error(bloqueo
+      ? "Esta plataforma (p. ej. YouTube) está limitando la descarga automática ahora mismo. Descarga el audio/vídeo y súbelo directamente, o usa un enlace directo al archivo."
+      : "No pudimos acceder a esa URL. Prueba con un enlace directo al archivo o sube el fichero.");
+  }
   const files = await readdir(dir);
   const audio = files.find((f) => /\.(mp3|m4a|wav|opus|ogg)$/i.test(f));
   if (!audio) { await rm(dir, { recursive: true, force: true }).catch(() => {}); throw new Error("No se encontró audio descargado."); }
