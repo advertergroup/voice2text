@@ -2,10 +2,14 @@
 FROM node:24-bookworm-slim
 WORKDIR /app
 
-# openssl (Prisma) + ffmpeg (audio de vídeo) + yt-dlp (URLs) opcionales.
+# openssl (Prisma) + ffmpeg (audio/vídeo) + python + pip (Whisper local).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl ca-certificates ffmpeg python3 \
+    openssl ca-certificates ffmpeg python3 python3-pip \
   && rm -rf /var/lib/apt/lists/*
+
+# Motor de transcripción local GRATIS (faster-whisper vía CLI compatible con openai-whisper).
+# El modelo se descarga en primer uso y persiste en el volumen /root/.cache.
+RUN pip3 install --no-cache-dir --break-system-packages whisper-ctranslate2
 
 ENV NODE_ENV=production
 

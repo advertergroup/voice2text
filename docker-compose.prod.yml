@@ -24,9 +24,11 @@ services:
       - "${APP_PORT:-3100}:3000"
     volumes:
       - v2tuploads:/app/uploads
+      - v2twhisper:/root/.cache   # modelo de Whisper (se descarga 1 vez y persiste)
     # Crea/actualiza tablas, siembra contenido por defecto (idempotente) y arranca.
     command: sh -c "npx prisma db push --skip-generate && (node scripts/seed.ts || true) && npm run start"
 
 volumes:
   v2tpgdata:
   v2tuploads:
+  v2twhisper:

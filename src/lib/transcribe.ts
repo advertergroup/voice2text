@@ -89,7 +89,10 @@ async function local(audio: string, opts: { language?: string }): Promise<Transc
   const bin = process.env.WHISPER_BIN;
   if (!bin) throw new Error("Falta WHISPER_BIN.");
   const dir = await mkdtemp(join(tmpdir(), "v2t-w-"));
-  const args = [audio, "--output_format", "json", "--output_dir", dir];
+  const args = [audio, "--output_format", "json", "--output_dir", dir, "--model", process.env.WHISPER_MODEL || "small"];
+  if (process.env.WHISPER_DEVICE) args.push("--device", process.env.WHISPER_DEVICE);
+  if (process.env.WHISPER_COMPUTE) args.push("--compute_type", process.env.WHISPER_COMPUTE);
+  if (process.env.WHISPER_THREADS) args.push("--threads", process.env.WHISPER_THREADS);
   if (opts.language && opts.language !== "auto") args.push("--language", opts.language);
   const r = await run(bin, args);
   if (r.code !== 0) throw new Error(`whisper local falló: ${r.err.slice(0, 200)}`);
