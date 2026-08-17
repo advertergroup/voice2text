@@ -25,6 +25,24 @@ const run = (bin: string, args: string[]): Promise<{ code: number; out: string; 
     p.on("close", (code) => res({ code: code ?? -1, out, err }));
   });
 
+/** Duración total en segundos (ffprobe), o null si no se puede leer. */
+export async function probeDuration(filePath: string): Promise<number | null> {
+  const ffprobe = process.env.FFPROBE_BIN || "ffprobe";
+  const r = await run(ffprobe, ["-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", filePath]);
+  const d = parseFloat((r.out || "").trim());
+  return isFinite(d) && d > 0 ? Math.round(d) : null;
+}
+
+/** Extrae los primeros `seconds` segundos como audio mp3 (para la preview). Devuelve ruta + temporal a limpiar. */
+export async function extraerPreview(filePath: string, seconds: number): Promise<{ path: string; tmp: string }> {
+  const ffmpeg = process.env.FFMPEG_BIN || "ffmpeg";
+  const dir = await mkdtemp(join(tmpdir(), "v2t-pv-"));
+  const out = join(dir, "preview.mp3");
+  const r = await run(ffmpeg, ["-y", "-i", filePath, "-t", String(seconds), "-vn", "-ac", "1", "-ar", "16000", "-b:a", "96k", out]);
+  if (r.code !== 0) { await rm(dir, { recursive: true, force: true }).catch(() => {}); throw new Error("No se pudo extraer la preview del audio."); }
+  return { path: out, tmp: dir };
+}
+
 /** Descarga el audio de una URL (YouTube, etc.) con yt-dlp. Devuelve la ruta y su carpeta temporal (para borrarla). */
 export async function descargarDeUrl(url: string): Promise<{ path: string; tmp: string }> {
   const ytdlp = process.env.YTDLP_BIN;

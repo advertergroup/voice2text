@@ -1,15 +1,26 @@
 import { loadContent, t, getLocale } from "../src/lib/content.ts";
 import { getCurrentUser } from "../src/auth/session.ts";
 import { Nav, Footer } from "../src/ui/site.tsx";
+import { Uploader } from "../src/ui/Uploader.tsx";
 import { localePath } from "../src/lib/locale.ts";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
+const UPERR: Record<string, string> = {
+  nofile: "Sube un archivo o pega una URL.",
+  badtype: "Ese archivo no es un audio o vídeo válido (MP3, WAV, M4A, MP4, MOV, MKV…).",
+  toobig: "El archivo es demasiado grande.",
+  infected: "El archivo se ha rechazado por seguridad.",
+  limit: "Has hecho varias pruebas seguidas. Espera un momento e inténtalo de nuevo.",
+};
+
+export default async function Home({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
+  const sp = await searchParams;
   const locale = await getLocale();
   const c = await loadContent(locale);
   const user = await getCurrentUser();
   const reg = user ? "/dashboard" : localePath(locale, "/register");
+  const uperr = sp.uperr ? (UPERR[sp.uperr] || "No se pudo procesar la subida.") : null;
 
   const feat = [
     ["⚡", "feat.f1"], ["🌍", "feat.f2"], ["📄", "feat.f3"], ["🔒", "feat.f4"],
@@ -26,14 +37,11 @@ export default async function Home() {
         <div className="container">
           <h1>{t(c, "hero.title")}</h1>
           <p className="sub">{t(c, "hero.subtitle")}</p>
-          <a href={reg} className="btn btn-primary btn-lg">{t(c, "hero.cta")}</a>
-
-          <a href={reg} className="dropzone" style={{ display: "block" }}>
-            <div className="ico">📤</div>
-            <div style={{ fontWeight: 600, marginTop: 8 }}>{t(c, "hero.dropzone")}</div>
-            <div style={{ marginTop: 16 }}><span className="btn btn-primary">{t(c, "hero.selectFiles")}</span></div>
-            <div className="badges" style={{ marginTop: 18 }}><span>{t(c, "hero.formats")}</span></div>
-          </a>
+          {uperr && <div className="err" style={{ maxWidth: 560, margin: "0 auto 16px" }}>⚠️ {uperr}</div>}
+          <div style={{ maxWidth: 660, margin: "0 auto", textAlign: "left" }}>
+            <Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} />
+          </div>
+          <div className="badges" style={{ marginTop: 16, justifyContent: "center", display: "flex" }}><span>{t(c, "hero.formats")}</span></div>
         </div>
       </div>
 

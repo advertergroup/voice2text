@@ -3,6 +3,7 @@ import { getPrisma } from "../../../src/db/client.ts";
 import { getCurrentUser } from "../../../src/auth/session.ts";
 import { tieneStripe, getStripe } from "../../../src/lib/stripe.ts";
 import { activeProvider, tieneKunfupay, createSubscriptionSession } from "../../../src/lib/kunfupay.ts";
+import { unlockUser } from "../../../src/lib/funnel.ts";
 
 export const runtime = "nodejs";
 
@@ -70,5 +71,6 @@ export async function GET(req: Request) {
       trialEndsAt: plan.periodo === "trial" ? new Date(Date.now() + 7 * 864e5) : null,
       currentPeriodEnd: new Date(Date.now() + 30 * 864e5) },
   });
+  await unlockUser(user.id); // transcribe el resto de sus transcripciones bloqueadas
   return NextResponse.redirect(new URL("/dashboard?activated=1", base), { status: 303 });
 }

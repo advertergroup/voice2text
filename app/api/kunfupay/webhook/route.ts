@@ -1,5 +1,6 @@
 import { getPrisma } from "../../../../src/db/client.ts";
 import { verifyWebhook } from "../../../../src/lib/kunfupay.ts";
+import { unlockUser } from "../../../../src/lib/funnel.ts";
 
 export const runtime = "nodejs";
 
@@ -70,5 +71,6 @@ export async function POST(req: Request) {
   }
 
   await prisma.user.update({ where: { id: user.id }, data }).catch(() => {});
+  if (data.subStatus === "ACTIVE") await unlockUser(user.id); // desbloquea/transcribe el resto
   return new Response("ok", { status: 200 });
 }

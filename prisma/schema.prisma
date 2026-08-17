@@ -59,22 +59,32 @@ model User {
 
 model Transcription {
   id          String      @id @default(cuid())
-  userId      String
-  user        User        @relation(fields: [userId], references: [id])
+  userId      String?
+  user        User?       @relation(fields: [userId], references: [id])
+  anonSession String?     // subida anónima (cookie) hasta que se registre/reclame
   titulo      String      // nombre del fichero o de la URL
   sourceType  SourceType  @default(FILE)
   sourceUrl   String?
   language    String      @default("auto")
   mode        TransMode   @default(STANDARD)
   status      TransStatus @default(QUEUED)
-  texto       String      @default("") @db.Text // texto (editable por el usuario)
-  segmentos   Json?       // [{start,end,text}] para SRT/subtítulos
+  locked      Boolean     @default(true)          // true = solo preview hasta pagar
+  preview     String      @default("") @db.Text   // texto del inicio (teaser real)
+  previewSeg  Int         @default(60)            // segundos cubiertos por la preview
+  texto       String      @default("") @db.Text   // texto COMPLETO (vacío hasta desbloquear)
+  segmentos   Json?       // [{start,end,text}] para SRT/subtítulos (completo)
   duracionSeg Int?
+  fileKey     String?     // archivo guardado (para transcribir el resto al pagar)
+  fileExpiresAt DateTime? // cuándo se borra el archivo si no paga
+  fileDeleted Boolean     @default(false)
+  recoveryStage Int       @default(0)             // emails de recuperación enviados (fase 2)
   error       String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
   @@index([userId, createdAt])
+  @@index([anonSession])
+  @@index([locked, fileExpiresAt])
 }
 
 // Textos editables del sitio (marca, copy, CTAs…). El panel de admin edita el `value`.
