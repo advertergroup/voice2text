@@ -4,10 +4,18 @@ import { getPrisma } from "../db/client.ts";
 import { transcribe } from "./transcribe.ts";
 
 /** Parámetros del funnel (configurables por env). */
-export const PREVIEW_SECONDS = Number(process.env.PREVIEW_SECONDS || 60);
+export const PREVIEW_SECONDS = Number(process.env.PREVIEW_SECONDS || 25);  // segundos de audio a extraer (clip corto)
+export const PREVIEW_WORDS = Number(process.env.PREVIEW_WORDS || 40);      // máx. palabras mostradas en la preview
 export const FILE_RETENTION_HOURS = Number(process.env.FILE_RETENTION_HOURS || 36);
 export const ANON_UPLOAD_LIMIT = Number(process.env.ANON_UPLOAD_LIMIT || 5); // subidas/hora por sesión anónima
 export const ANON_COOKIE = "v2t_anon";
+
+/** Recorta un texto a las primeras `n` palabras (para el teaser). */
+export function recortarPalabras(texto: string, n: number): string {
+  const palabras = (texto || "").trim().split(/\s+/).filter(Boolean);
+  if (palabras.length <= n) return texto.trim();
+  return palabras.slice(0, n).join(" ") + "…";
+}
 
 const UPLOAD_DIR = join(process.cwd(), "uploads");
 

@@ -5,7 +5,7 @@ import { getCurrentUser } from "../../../src/auth/session.ts";
 import { getPrisma } from "../../../src/db/client.ts";
 import { Nav, Footer } from "../../../src/ui/site.tsx";
 import { Resultado } from "../../../src/ui/Resultado.tsx";
-import { localePath } from "../../../src/lib/locale.ts";
+import { localePath, formatPrice } from "../../../src/lib/locale.ts";
 import { ANON_COOKIE } from "../../../src/lib/funnel.ts";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +25,8 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   if (!owns) notFound();
 
   const plan = await prisma.plan.findFirst({ where: { key: "premium", locale: "es" } });
-  const precio = plan ? (plan.precioCent / 100).toLocaleString(locale, { minimumFractionDigits: 2 }) + " €/mes" : "";
+  const precio = plan ? formatPrice(plan.precioCent, plan.moneda) : "";
+  const trialDays = Number(process.env.TRIAL_DAYS || 7);
   const ctaHref = user ? "/api/checkout?plan=premium" : localePath(locale, "/register?plan=premium");
 
   return (
@@ -34,7 +35,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
       <section style={{ paddingTop: 26 }}>
         <div className="container" style={{ maxWidth: 820 }}>
           <a href={user ? "/dashboard" : localePath(locale, "/")} className="muted" style={{ fontSize: 14 }}>← {user ? "Mi panel" : t(c, "brand.name")}</a>
-          <Resultado tr={tr as any} c={c} locale={locale} precio={precio} ctaHref={ctaHref} />
+          <Resultado tr={tr as any} c={c} locale={locale} precio={precio} ctaHref={ctaHref} trialDays={trialDays} />
         </div>
       </section>
       <Footer c={c} locale={locale} />

@@ -7,7 +7,7 @@ import { getPrisma } from "../../../src/db/client.ts";
 import { getCurrentUser } from "../../../src/auth/session.ts";
 import { transcribe, descargarDeUrl, probeDuration, extraerPreview } from "../../../src/lib/transcribe.ts";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB, ALLOWED_EXT, sniffMedia, extSegura, scanClamAV } from "../../../src/lib/upload-guard.ts";
-import { PREVIEW_SECONDS, FILE_RETENTION_HOURS, ANON_UPLOAD_LIMIT, ANON_COOKIE, esPagado, cleanupExpired } from "../../../src/lib/funnel.ts";
+import { PREVIEW_SECONDS, PREVIEW_WORDS, FILE_RETENTION_HOURS, ANON_UPLOAD_LIMIT, ANON_COOKIE, esPagado, cleanupExpired, recortarPalabras } from "../../../src/lib/funnel.ts";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
         const { path: pv, tmp } = await extraerPreview(workPath!, PREVIEW_SECONDS);
         const r = await transcribe(pv, { language, mode, originalName: titulo });
         await rm(tmp, { recursive: true, force: true }).catch(() => {});
-        await prisma.transcription.update({ where: { id: trans.id }, data: { preview: r.text, duracionSeg: dur ?? null, locked: true, status: "DONE" } });
+        await prisma.transcription.update({ where: { id: trans.id }, data: { preview: recortarPalabras(r.text, PREVIEW_WORDS), duracionSeg: dur ?? null, locked: true, status: "DONE" } });
       }
     } catch (e) {
       await prisma.transcription.update({ where: { id: trans.id }, data: { status: "ERROR", error: e instanceof Error ? e.message : "error" } }).catch(() => {});

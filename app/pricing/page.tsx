@@ -2,7 +2,7 @@ import { loadContent, t, getLocale } from "../../src/lib/content.ts";
 import { getCurrentUser } from "../../src/auth/session.ts";
 import { getPrisma } from "../../src/db/client.ts";
 import { Nav, Footer } from "../../src/ui/site.tsx";
-import { localePath, DEFAULT_LOCALE } from "../../src/lib/locale.ts";
+import { localePath, DEFAULT_LOCALE, formatPrice } from "../../src/lib/locale.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +18,8 @@ export default async function Pricing({ searchParams }: { searchParams: Promise<
     planes = await prisma.plan.findMany({ where: { activo: true, locale: DEFAULT_LOCALE }, orderBy: { orden: "asc" } });
   }
 
-  const precio = (p: { precioCent: number; moneda: string }) =>
-    (p.precioCent / 100).toLocaleString(locale, { minimumFractionDigits: 2 }) + " " + (p.moneda === "EUR" ? "€" : p.moneda);
+  const precio = (p: { precioCent: number; moneda: string }) => formatPrice(p.precioCent, p.moneda);
+  const trialDays = Number(process.env.TRIAL_DAYS || 7);
 
   const PER: Record<string, { month: string; year: string }> = {
     es: { month: "mes", year: "año" }, en: { month: "month", year: "year" }, pt: { month: "mês", year: "ano" },
@@ -44,12 +44,13 @@ export default async function Pricing({ searchParams }: { searchParams: Promise<
           <div className="plans">
             {planes.map((p: any) => (
               <div className={"plan" + (p.destacado ? " top" : "")} key={p.id}>
-                {p.badge && <span className="badge">{p.badge}</span>}
+                {trialDays > 0 && p.key === "premium" ? <span className="badge">{trialDays} días gratis</span> : p.badge && <span className="badge">{p.badge}</span>}
                 <h3 style={{ fontSize: 20, margin: "6px 0" }}>{p.nombre}</h3>
-                <div className="price">{precio(p)}<small> / {p.periodo === "trial" ? `${p.badge || per.month}` : p.periodo === "year" ? per.year : per.month}</small></div>
+                <div className="price">{precio(p)}<small> / {p.periodo === "year" ? per.year : per.month}</small></div>
+                {trialDays > 0 && p.key === "premium" && <p style={{ fontSize: 14, fontWeight: 600, color: "var(--accent)", marginTop: 4 }}>{trialDays} días gratis, luego {precio(p)}/{per.month}</p>}
                 {p.descripcion && <p className="muted" style={{ fontSize: 14, marginTop: 6 }}>{p.descripcion}</p>}
                 <ul>{(p.caracteristicas as string[]).map((f, i) => <li key={i}>{f}</li>)}</ul>
-                <a href={user ? `/api/checkout?plan=${p.key}` : localePath(locale, `/register?plan=${p.key}`)} className={"btn " + (p.destacado ? "btn-primary" : "btn-ghost")} style={{ marginTop: "auto" }}>{p.botonTexto}</a>
+                <a href={user ? `/api/checkout?plan=${p.key}` : localePath(locale, `/register?plan=${p.key}`)} className={"btn " + (p.destacado ? "btn-primary" : "btn-ghost")} style={{ marginTop: "auto" }}>{trialDays > 0 && p.key === "premium" ? `Empezar ${trialDays} días gratis` : p.botonTexto}</a>
               </div>
             ))}
           </div>

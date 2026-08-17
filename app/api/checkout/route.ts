@@ -53,11 +53,13 @@ export async function GET(req: Request) {
         customerId = cust.id;
         await prisma.user.update({ where: { id: user.id }, data: { stripeCustomerId: customerId } });
       }
+      const trialDays = Number(process.env.TRIAL_DAYS || 7);
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         customer: customerId,
-        payment_method_types: ["card"], // las tarjetas cobran en EUR aunque la cuenta liquide en USD
+        payment_method_types: ["card"],
         line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+        subscription_data: trialDays > 0 ? { trial_period_days: trialDays } : undefined,
         success_url: okUrl,
         cancel_url: cancelUrl,
         metadata: { userId: user.id, planKey: plan.key },

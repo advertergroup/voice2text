@@ -52,6 +52,16 @@ export function stripLocale(pathname: string): { locale: string; rest: string } 
   return { locale: DEFAULT_LOCALE, rest: pathname === "" ? "/" : pathname };
 }
 
+/** Formatea un precio (céntimos) con su símbolo. USD → "$49.90"; EUR → "49,90 €". */
+export function formatPrice(cents: number, currency?: string): string {
+  const a = (cents / 100).toFixed(2);
+  const c = (currency || "USD").toUpperCase();
+  if (c === "USD") return "$" + a;
+  if (c === "EUR") return a.replace(".", ",") + " €";
+  if (c === "GBP") return "£" + a;
+  return a + " " + c;
+}
+
 /** Detecta el mejor idioma soportado a partir de una cabecera Accept-Language. */
 export function detectFromAcceptLanguage(header: string | null): string {
   if (!header) return DEFAULT_LOCALE;
