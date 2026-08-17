@@ -45,22 +45,27 @@ export async function GET(req: Request) {
   // ---- Stripe ----
   if (provider === "stripe") {
     if (!(tieneStripe() && plan.stripePriceId)) return configError();
-    const stripe = await getStripe();
-    let customerId = user.stripeCustomerId;
-    if (!customerId) {
-      const cust = await stripe.customers.create({ email: user.email, name: user.nombre || undefined });
-      customerId = cust.id;
-      await prisma.user.update({ where: { id: user.id }, data: { stripeCustomerId: customerId } });
+    try {
+      const stripe = await getStripe();
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const cust = await stripe.customers.create({ email: user.email, name: user.nombre || undefined });
+        customerId = cust.id;
+        await prisma.user.update({ where: { id: user.id }, data: { stripeCustomerId: customerId } });
+      }
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        customer: customerId,
+        payment_method_types: ["card"], // las tarjetas cobran en EUR aunque la cuenta liquide en USD
+        line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+        success_url: okUrl,
+        cancel_url: cancelUrl,
+        metadata: { userId: user.id, planKey: plan.key },
+      });
+      return NextResponse.redirect(session.url!, { status: 303 });
+    } catch {
+      return NextResponse.redirect(new URL("/pricing?error=pago", base), { status: 303 });
     }
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: customerId,
-      line_items: [{ price: plan.stripePriceId, quantity: 1 }],
-      success_url: okUrl,
-      cancel_url: cancelUrl,
-      metadata: { userId: user.id, planKey: plan.key },
-    });
-    return NextResponse.redirect(session.url!, { status: 303 });
   }
 
   // ---- provider === "mock" (SOLO): activación de prueba para el funnel sin pasarela.
