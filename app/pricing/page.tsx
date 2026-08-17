@@ -20,6 +20,7 @@ export default async function Pricing({ searchParams }: { searchParams: Promise<
 
   const precio = (p: { precioCent: number; moneda: string }) => formatPrice(p.precioCent, p.moneda);
   const trialDays = Number(process.env.TRIAL_DAYS || 7);
+  const todayLabel = formatPrice(Number(process.env.TRIPWIRE_CENTS || 99), "USD");
 
   const PER: Record<string, { month: string; year: string }> = {
     es: { month: "mes", year: "año" }, en: { month: "month", year: "year" }, pt: { month: "mês", year: "ano" },
@@ -44,13 +45,13 @@ export default async function Pricing({ searchParams }: { searchParams: Promise<
           <div className="plans">
             {planes.map((p: any) => (
               <div className={"plan" + (p.destacado ? " top" : "")} key={p.id}>
-                {trialDays > 0 && p.key === "premium" ? <span className="badge">{trialDays} días gratis</span> : p.badge && <span className="badge">{p.badge}</span>}
+                {p.key === "premium" ? <span className="badge">Prueba {todayLabel}</span> : p.badge && <span className="badge">{p.badge}</span>}
                 <h3 style={{ fontSize: 20, margin: "6px 0" }}>{p.nombre}</h3>
                 <div className="price">{precio(p)}<small> / {p.periodo === "year" ? per.year : per.month}</small></div>
-                {trialDays > 0 && p.key === "premium" && <p style={{ fontSize: 14, fontWeight: 600, color: "var(--accent)", marginTop: 4 }}>{trialDays} días gratis, luego {precio(p)}/{per.month}</p>}
+                {p.key === "premium" && <p style={{ fontSize: 14, fontWeight: 600, color: "var(--accent)", marginTop: 4 }}>{todayLabel} los primeros {trialDays} días, luego {precio(p)}/{per.month}</p>}
                 {p.descripcion && <p className="muted" style={{ fontSize: 14, marginTop: 6 }}>{p.descripcion}</p>}
                 <ul>{(p.caracteristicas as string[]).map((f, i) => <li key={i}>{f}</li>)}</ul>
-                <a href={user ? `/api/checkout?plan=${p.key}` : localePath(locale, `/register?plan=${p.key}`)} className={"btn " + (p.destacado ? "btn-primary" : "btn-ghost")} style={{ marginTop: "auto" }}>{trialDays > 0 && p.key === "premium" ? `Empezar ${trialDays} días gratis` : p.botonTexto}</a>
+                <a href="/pay" className={"btn " + (p.destacado ? "btn-primary" : "btn-ghost")} style={{ marginTop: "auto" }}>{p.botonTexto}</a>
               </div>
             ))}
           </div>

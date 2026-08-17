@@ -27,7 +27,8 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   const plan = await prisma.plan.findFirst({ where: { key: "premium", locale: "es" } });
   const precio = plan ? formatPrice(plan.precioCent, plan.moneda) : "";
   const trialDays = Number(process.env.TRIAL_DAYS || 7);
-  const ctaHref = user ? "/api/checkout?plan=premium" : localePath(locale, "/register?plan=premium");
+  const todayLabel = formatPrice(Number(process.env.TRIPWIRE_CENTS || 99), "USD");
+  const ctaHref = `/pay?t=${tr.id}`; // checkout propio, sin crear cuenta
 
   return (
     <>
@@ -35,7 +36,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
       <section style={{ paddingTop: 26 }}>
         <div className="container" style={{ maxWidth: 820 }}>
           <a href={user ? "/dashboard" : localePath(locale, "/")} className="muted" style={{ fontSize: 14 }}>← {user ? "Mi panel" : t(c, "brand.name")}</a>
-          <Resultado tr={tr as any} c={c} locale={locale} precio={precio} ctaHref={ctaHref} trialDays={trialDays} />
+          <Resultado tr={tr as any} c={c} locale={locale} precio={precio} ctaHref={ctaHref} trialDays={trialDays} todayLabel={todayLabel} />
         </div>
       </section>
       <Footer c={c} locale={locale} />

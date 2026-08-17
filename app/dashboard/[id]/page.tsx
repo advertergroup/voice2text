@@ -21,11 +21,12 @@ export default async function Detalle({ params }: { params: Promise<{ id: string
   const plan = await prisma.plan.findFirst({ where: { key: "premium", locale: "es" } });
   const precio = plan ? formatPrice(plan.precioCent, plan.moneda) : "";
   const trialDays = Number(process.env.TRIAL_DAYS || 7);
+  const todayLabel = formatPrice(Number(process.env.TRIPWIRE_CENTS || 99), "USD");
 
   return (
     <AppShell brand={t(c, "brand.name")} email={user.email} role={user.role} active="dash">
       <a href="/dashboard" className="muted" style={{ fontSize: 14 }}>← Volver</a>
-      <Resultado tr={tr as any} c={c} locale={locale} precio={precio} ctaHref="/api/checkout?plan=premium" trialDays={trialDays} />
+      <Resultado tr={tr as any} c={c} locale={locale} precio={precio} ctaHref={`/pay?t=${tr.id}`} trialDays={trialDays} todayLabel={todayLabel} />
     </AppShell>
   );
 }

@@ -39,12 +39,12 @@ function Sidebar({ ctaHref }: { ctaHref: string }) {
 }
 
 /** Vista de una transcripción: procesando / error / preview bloqueada (paywall + sidebar) / completa. */
-export function Resultado({ tr, precio, ctaHref, trialDays = 7 }: { tr: TrView; c?: C; locale?: string; precio?: string; ctaHref: string; trialDays?: number }) {
+export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel }: { tr: TrView; c?: C; locale?: string; precio?: string; ctaHref: string; trialDays?: number; todayLabel?: string }) {
   const procesando = tr.status === "PROCESSING" || tr.status === "QUEUED";
   const restante = Math.max(0, (tr.duracionSeg || 0) - (tr.previewSeg || 25));
   const lineas = Math.min(22, Math.max(5, Math.round(restante / 4)));
-  const ctaTexto = trialDays > 0 ? `Empezar ${trialDays} días gratis` : `Desbloquear${precio ? ` · ${precio}/mes` : ""}`;
-  const ctaSub = trialDays > 0 ? `Luego ${precio || ""}/mes · Cancela cuando quieras.` : "Cancela cuando quieras.";
+  const ctaTexto = `Desbloquear ahora${todayLabel ? ` — ${todayLabel}` : ""}`;
+  const ctaSub = todayLabel ? `${todayLabel} los primeros ${trialDays} días, luego ${precio || ""}/mes · Cancela cuando quieras.` : `Cancela cuando quieras.`;
 
   return (
     <>
