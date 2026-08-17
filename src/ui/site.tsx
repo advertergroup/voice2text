@@ -83,6 +83,7 @@ export function Footer({ c, locale = DEFAULT_LOCALE }: { c: C; locale?: string }
             <a href={lp("/help")}>{t(c, "footer.help")}</a>
             <a href={lp("/terms")}>{t(c, "footer.terms")}</a>
             <a href={lp("/privacy")}>{t(c, "footer.privacy")}</a>
+            <a href={lp("/refund")}>{t(c, "footer.legal")}</a>
             <a href={lp("/pricing")}>{t(c, "nav.pricing")}</a>
           </div>
         </div>
@@ -92,6 +93,11 @@ export function Footer({ c, locale = DEFAULT_LOCALE }: { c: C; locale?: string }
           ))}
         </div>
         <div className="cr">{t(c, "footer.copyright")}</div>
+        {(t(c, "company.name") || t(c, "company.address")) && (
+          <div className="muted" style={{ fontSize: 12, marginTop: 6, textAlign: "center", opacity: 0.8 }}>
+            {t(c, "company.name")}{t(c, "company.name") && t(c, "company.address") ? " · " : ""}{t(c, "company.address")}
+          </div>
+        )}
       </div>
     </footer>
   );

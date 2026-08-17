@@ -2,7 +2,15 @@ import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../src/auth/core.ts";
 import { DEFAULT_CONTENT } from "../src/lib/content.ts";
 import { TRANSLATIONS, I18N_PLANS, I18N_FAQS, I18N_LANDINGS } from "../src/lib/translations.generated.ts";
+import { LEGAL_TRANSLATIONS } from "../src/lib/translations.legal.ts";
 import { LOCALE_CODES, DEFAULT_LOCALE } from "../src/lib/locale.ts";
+
+// Claves legales/empresa: se sincronizan SIEMPRE desde el código (contenido versionado, no editable en admin).
+const FORCE_KEYS = new Set([
+  "legal.terms.title", "legal.terms.body", "legal.privacy.title", "legal.privacy.body",
+  "legal.refund.title", "legal.refund.body", "legal.help.title", "legal.help.body",
+  "company.name", "company.address", "contact.email", "footer.copyright", "footer.legal",
+]);
 
 /**
  * Siembra idempotente y multi-idioma:
@@ -24,12 +32,15 @@ await p.user.upsert({
 // 2) Textos (SiteContent) por idioma
 for (const locale of LOCALE_CODES) {
   const tr = locale === DEFAULT_LOCALE ? {} : (TRANSLATIONS[locale] || {});
+  const lg = locale === DEFAULT_LOCALE ? {} : (LEGAL_TRANSLATIONS[locale] || {});
   for (const c of DEFAULT_CONTENT) {
-    const value = locale === DEFAULT_LOCALE ? c.value : (tr[c.key] ?? c.value);
+    const value = locale === DEFAULT_LOCALE ? c.value : (lg[c.key] ?? tr[c.key] ?? c.value);
+    const meta = { label: c.label, grupo: c.grupo, orden: c.orden ?? 0, multiline: !!c.multiline };
     await p.siteContent.upsert({
       where: { key_locale: { key: c.key, locale } },
-      update: { label: c.label, grupo: c.grupo, orden: c.orden ?? 0, multiline: !!c.multiline }, // metadatos sí; valor NO
-      create: { key: c.key, locale, value, label: c.label, grupo: c.grupo, orden: c.orden ?? 0, multiline: !!c.multiline },
+      // Legales/empresa → se reescribe el valor siempre; el resto solo metadatos (respeta ediciones del admin).
+      update: FORCE_KEYS.has(c.key) ? { ...meta, value } : meta,
+      create: { key: c.key, locale, value, ...meta },
     });
   }
 }

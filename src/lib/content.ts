@@ -1,6 +1,7 @@
 import { getPrisma } from "../db/client.ts";
 import { DEFAULT_LOCALE, isLocale } from "./locale.ts";
 import { TRANSLATIONS } from "./translations.generated.ts";
+import { LEGAL_TRANSLATIONS } from "./translations.legal.ts";
 
 /**
  * Textos editables del sitio. DEFAULT_CONTENT son los valores por defecto (clon del copy de
@@ -75,16 +76,23 @@ export const DEFAULT_CONTENT: ContentDef[] = [
   { key: "footer.help", grupo: "Footer", label: "Enlace: ayuda", value: "Ayuda y soporte", orden: 2 },
   { key: "footer.terms", grupo: "Footer", label: "Enlace: términos", value: "Términos del servicio", orden: 3 },
   { key: "footer.privacy", grupo: "Footer", label: "Enlace: privacidad", value: "Política de privacidad", orden: 4 },
-  { key: "footer.copyright", grupo: "Footer", label: "Copyright", value: "© {brand}. Todos los derechos reservados.", orden: 5 },
+  { key: "footer.copyright", grupo: "Footer", label: "Copyright", value: "© {brand} — un producto de {company}. Todos los derechos reservados.", orden: 5 },
+  { key: "footer.legal", grupo: "Footer", label: "Enlace: reembolsos", value: "Reembolsos y cancelación", orden: 6 },
 
-  // ---- Legales (cuerpo editable) ----
+  // ---- Empresa (identidad legal) ----
+  { key: "company.name", grupo: "Empresa", label: "Razón social", value: "1mmObj LLC", orden: 1 },
+  { key: "company.address", grupo: "Empresa", label: "Dirección legal", value: "1209 Mountain Road Pl NE, Ste N, Albuquerque, NM 87110, USA", orden: 2 },
+  { key: "contact.email", grupo: "Empresa", label: "Email de contacto/soporte", value: "support@voicetotexts.net", orden: 3 },
+
+  // ---- Legales (cuerpo editable · HTML) ----
   { key: "legal.terms.title", grupo: "Legales", label: "Términos · título", value: "Términos del servicio", orden: 1 },
-  { key: "legal.terms.body", grupo: "Legales", label: "Términos · cuerpo (HTML)", value: "<p>Bienvenido a {brand}. Al usar el servicio aceptas estos términos. Edita este texto en el panel de administración.</p>", multiline: true, orden: 2 },
+  { key: "legal.terms.body", grupo: "Legales", label: "Términos · cuerpo (HTML)", multiline: true, orden: 2, value: "<p><em>Última actualización: 4 de agosto de 2026.</em></p><p>Estos Términos del Servicio («Términos») regulan el uso de {brand} («el Servicio»), operado por {company}, con domicilio en {address}. Al crear una cuenta o usar el Servicio, aceptas estos Términos.</p><h2>1. El servicio</h2><p>{brand} transcribe archivos de audio y vídeo a texto mediante inteligencia artificial y permite exportar el resultado en distintos formatos. El Servicio se ofrece «tal cual» y podemos modificar o mejorar sus funciones en cualquier momento.</p><h2>2. Cuenta</h2><p>Debes facilitar información veraz y mantener la confidencialidad de tus credenciales. Eres responsable de la actividad de tu cuenta y debes tener la edad legal en tu jurisdicción para usar el Servicio.</p><h2>3. Planes, precios y facturación</h2><p>El Servicio se ofrece por suscripción. Los precios y la periodicidad se muestran en la página de <a href='/pricing'>Precios</a> y antes de pagar. Salvo indicación en contrario, las suscripciones se <strong>renuevan automáticamente</strong> al final de cada periodo al precio vigente hasta que las canceles. Los pagos se procesan de forma segura a través de nuestro proveedor de pagos; no almacenamos los datos completos de tu tarjeta. Los importes se expresan en euros (EUR) e incluyen los impuestos aplicables cuando corresponda.</p><h2>4. Cancelación y reembolsos</h2><p>Puedes cancelar en cualquier momento; la cancelación detiene las renovaciones futuras y conservas el acceso hasta el final del periodo ya pagado. Consulta nuestra <a href='/refund'>Política de reembolsos y cancelación</a>.</p><h2>5. Uso aceptable</h2><p>Declaras que tienes los derechos necesarios sobre los archivos que subes y que su transcripción no infringe la ley ni derechos de terceros. No puedes usar el Servicio para contenido ilegal, difamatorio o que vulnere la propiedad intelectual o la privacidad de terceros. Podemos suspender cuentas que incumplan estos Términos.</p><h2>6. Tu contenido</h2><p>Conservas la titularidad de los archivos que subes y de las transcripciones que generas. Nos concedes únicamente la licencia técnica necesaria para procesar tus archivos y prestarte el Servicio. Los archivos de audio y vídeo se eliminan automáticamente tras la transcripción (ver <a href='/privacy'>Política de privacidad</a>).</p><h2>7. Propiedad intelectual</h2><p>El software, la marca y el diseño de {brand} son propiedad de {company} y están protegidos por la ley. No se te concede ningún derecho sobre ellos salvo el uso del Servicio conforme a estos Términos.</p><h2>8. Disponibilidad y garantías</h2><p>Nos esforzamos por ofrecer un servicio fiable, pero no garantizamos disponibilidad ininterrumpida ni una exactitud del 100 % en las transcripciones automáticas. El Servicio se presta «tal cual» y «según disponibilidad».</p><h2>9. Limitación de responsabilidad</h2><p>En la medida permitida por la ley, {company} no será responsable de daños indirectos, incidentales o consecuentes derivados del uso del Servicio. Nuestra responsabilidad total se limita al importe abonado por ti en los tres meses anteriores al hecho que motive la reclamación.</p><h2>10. Ley aplicable</h2><p>Estos Términos se rigen por las leyes del Estado de Nuevo México (EE. UU.), sin perjuicio de los derechos que te correspondan como consumidor en tu país de residencia.</p><h2>11. Contacto</h2><p>{company} · {address} · <a href='mailto:{email}'>{email}</a></p>" },
   { key: "legal.privacy.title", grupo: "Legales", label: "Privacidad · título", value: "Política de privacidad", orden: 3 },
-  { key: "legal.privacy.body", grupo: "Legales", label: "Privacidad · cuerpo (HTML)", value: "<p>En {brand} tratamos tus datos con cuidado. Los archivos se procesan cifrados y no se comparten con terceros. Edita este texto en el panel de administración.</p>", multiline: true, orden: 4 },
-  { key: "legal.help.title", grupo: "Legales", label: "Ayuda · título", value: "Ayuda y soporte", orden: 5 },
-  { key: "legal.help.body", grupo: "Legales", label: "Ayuda · cuerpo (HTML)", value: "<p>¿Necesitas ayuda? Escríbenos y te respondemos lo antes posible. Edita este texto y el email de contacto en el panel de administración.</p>", multiline: true, orden: 6 },
-  { key: "contact.email", grupo: "Legales", label: "Email de contacto/soporte", value: "soporte@voice2text.local", orden: 7 },
+  { key: "legal.privacy.body", grupo: "Legales", label: "Privacidad · cuerpo (HTML)", multiline: true, orden: 4, value: "<p><em>Última actualización: 4 de agosto de 2026.</em></p><p>En {brand}, operado por {company} ({address}), respetamos tu privacidad. Esta política explica qué datos tratamos, con qué fin y qué derechos tienes.</p><h2>1. Responsable del tratamiento</h2><p>{company}, {address}. Contacto: <a href='mailto:{email}'>{email}</a>.</p><h2>2. Datos que tratamos</h2><ul><li><strong>Cuenta:</strong> email, nombre y contraseña (almacenada cifrada).</li><li><strong>Archivos:</strong> el audio o vídeo que subes para transcribir y el texto resultante.</li><li><strong>Pago:</strong> gestionado por nuestro proveedor de pagos; recibimos el estado de la suscripción, no los datos completos de tu tarjeta.</li><li><strong>Datos técnicos:</strong> registros de uso, dirección IP y cookies necesarias para el funcionamiento.</li></ul><h2>3. Para qué usamos tus datos</h2><p>Para prestar el Servicio (transcribir tus archivos, gestionar tu cuenta y suscripción), darte soporte, cumplir obligaciones legales y mejorar el Servicio. <strong>No vendemos tus datos.</strong></p><h2>4. Tus archivos de audio y vídeo</h2><p>Tus archivos se procesan con el único fin de generar la transcripción y <strong>se eliminan automáticamente de nuestros servidores en cuanto esta finaliza</strong>. No los usamos para entrenar modelos ni con fines publicitarios.</p><h2>5. Terceros que nos prestan servicio</h2><p>Recurrimos a proveedores que actúan por cuenta nuestra y bajo obligaciones de confidencialidad: un proveedor de transcripción por IA, un proveedor de pagos y un proveedor de alojamiento. Solo acceden a los datos necesarios para su función.</p><h2>6. Cookies</h2><p>Usamos cookies técnicas necesarias para iniciar sesión y recordar tu idioma. No usamos cookies publicitarias de terceros.</p><h2>7. Conservación</h2><p>Conservamos los datos de tu cuenta mientras esté activa y durante el tiempo que exijan las obligaciones legales. Los archivos subidos se eliminan tras la transcripción.</p><h2>8. Tus derechos</h2><p>Puedes acceder, rectificar, suprimir o portar tus datos, y oponerte o limitar su tratamiento, escribiendo a <a href='mailto:{email}'>{email}</a>. Si resides en la UE (RGPD) o en California (CCPA) dispones de derechos adicionales, incluida la reclamación ante tu autoridad de control.</p><h2>9. Seguridad</h2><p>Aplicamos medidas técnicas y organizativas razonables (cifrado en tránsito, contraseñas cifradas, acceso restringido) para proteger tus datos.</p><h2>10. Transferencias internacionales</h2><p>Nuestros proveedores pueden tratar datos fuera de tu país. En esos casos aplicamos las salvaguardas adecuadas conforme a la legislación aplicable.</p><h2>11. Menores</h2><p>El Servicio no está dirigido a menores de la edad legal en su jurisdicción y no recopilamos conscientemente sus datos.</p><h2>12. Cambios</h2><p>Podemos actualizar esta política; publicaremos la versión vigente en esta página con su fecha.</p><h2>13. Contacto</h2><p>{company} · {address} · <a href='mailto:{email}'>{email}</a></p>" },
+  { key: "legal.refund.title", grupo: "Legales", label: "Reembolsos · título", value: "Política de reembolsos y cancelación", orden: 5 },
+  { key: "legal.refund.body", grupo: "Legales", label: "Reembolsos · cuerpo (HTML)", multiline: true, orden: 6, value: "<p><em>Última actualización: 4 de agosto de 2026.</em></p><p>Esta política explica cómo funcionan las cancelaciones y los reembolsos de las suscripciones de {brand}, operado por {company}.</p><h2>1. Cancelación</h2><p>Puedes cancelar tu suscripción en cualquier momento desde tu cuenta o escribiéndonos a <a href='mailto:{email}'>{email}</a>. La cancelación detiene las renovaciones futuras; conservas el acceso hasta el final del periodo ya pagado y no se te volverá a cobrar.</p><h2>2. Renovación automática</h2><p>Las suscripciones se renuevan automáticamente al final de cada periodo, al precio vigente, hasta que canceles. El importe y la periodicidad se muestran claramente antes de pagar.</p><h2>3. Reembolsos</h2><p>Los periodos ya facturados no son reembolsables, salvo que la ley aplicable exija lo contrario o que exista un error de facturación por nuestra parte. Si crees que se ha producido un cobro incorrecto, escríbenos dentro de los 14 días siguientes al cargo y lo revisaremos.</p><h2>4. Periodo de prueba</h2><p>Si contratas un periodo de prueba, podrás usar el Servicio durante ese periodo; al finalizar, la suscripción continúa automáticamente al precio indicado, salvo que canceles antes.</p><h2>5. Contacto de facturación</h2><p><a href='mailto:{email}'>{email}</a> · {company} · {address}.</p>" },
+  { key: "legal.help.title", grupo: "Legales", label: "Ayuda · título", value: "Ayuda y soporte", orden: 7 },
+  { key: "legal.help.body", grupo: "Legales", label: "Ayuda · cuerpo (HTML)", multiline: true, orden: 8, value: "<p>¿Necesitas ayuda con {brand}? Estamos para ayudarte.</p><p>Escríbenos a <a href='mailto:{email}'>{email}</a> y te responderemos lo antes posible, normalmente en un plazo de 24-48 horas laborables.</p><p>Para gestionar tu suscripción (cambiar de plan o cancelar) accede a tu cuenta. Consulta también nuestras <a href='/faq'>preguntas frecuentes</a>, los <a href='/terms'>Términos</a>, la <a href='/privacy'>Política de privacidad</a> y la <a href='/refund'>Política de reembolsos</a>.</p><p><strong>{company}</strong><br/>{address}</p>" },
 
   // ---- Acceso (login / registro) ----
   { key: "auth.login.title", grupo: "Acceso", label: "Login · título", value: "Inicia sesión", orden: 1 },
@@ -113,10 +121,12 @@ export async function loadContent(locale: string = DEFAULT_LOCALE): Promise<Reco
   const map: Record<string, string> = {};
   // 1) base español
   for (const d of DEFAULT_CONTENT) map[d.key] = d.value;
-  // 2) traducciones en código
+  // 2) traducciones en código (marketing + legales)
   if (lang !== DEFAULT_LOCALE) {
     const tr = TRANSLATIONS[lang] || {};
     for (const k of Object.keys(tr)) map[k] = tr[k]!;
+    const lg = LEGAL_TRANSLATIONS[lang] || {};
+    for (const k of Object.keys(lg)) map[k] = lg[k]!;
   }
   // 3) overrides de BD para ese idioma
   try {
@@ -124,8 +134,18 @@ export async function loadContent(locale: string = DEFAULT_LOCALE): Promise<Reco
     const rows = await prisma.siteContent.findMany({ where: { locale: lang } });
     for (const r of rows as { key: string; value: string }[]) map[r.key] = r.value;
   } catch { /* BD no disponible → usa defaults/traducciones */ }
+  // Resolución de placeholders (marca, empresa, dirección, email de contacto).
   const brand = map["brand.name"] || "Voice2Text";
-  for (const k of Object.keys(map)) map[k] = (map[k] ?? "").replaceAll("{brand}", brand);
+  const company = map["company.name"] || "";
+  const address = map["company.address"] || "";
+  const email = map["contact.email"] || "";
+  for (const k of Object.keys(map)) {
+    map[k] = (map[k] ?? "")
+      .replaceAll("{brand}", brand)
+      .replaceAll("{company}", company)
+      .replaceAll("{address}", address)
+      .replaceAll("{email}", email);
+  }
   return map;
 }
 
