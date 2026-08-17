@@ -1,5 +1,6 @@
 import { getPrisma } from "../../../../src/db/client.ts";
 import { tieneStripe, getStripe } from "../../../../src/lib/stripe.ts";
+import { unlockUser } from "../../../../src/lib/funnel.ts";
 
 export const runtime = "nodejs";
 
@@ -19,14 +20,20 @@ export async function POST(req: Request) {
 
   const setSub = async (customerId: string, data: any) => {
     const u = await prisma.user.findFirst({ where: { stripeCustomerId: customerId } });
-    if (u) await prisma.user.update({ where: { id: u.id }, data });
+    if (u) {
+      await prisma.user.update({ where: { id: u.id }, data });
+      if (data.subStatus === "ACTIVE") await unlockUser(u.id); // desbloquea/transcribe el resto
+    }
   };
 
   switch (evt.type) {
     case "checkout.session.completed": {
       const s = evt.data.object;
       const userId = s.metadata?.userId;
-      if (userId) await prisma.user.update({ where: { id: userId }, data: { subStatus: "ACTIVE", planKey: s.metadata?.planKey || "premium", stripeSubscriptionId: s.subscription, stripeCustomerId: s.customer } }).catch(() => {});
+      if (userId) {
+        await prisma.user.update({ where: { id: userId }, data: { subStatus: "ACTIVE", planKey: s.metadata?.planKey || "premium", stripeSubscriptionId: s.subscription, stripeCustomerId: s.customer } }).catch(() => {});
+        await unlockUser(userId); // pago completado → transcribe el resto de sus transcripciones
+      }
       break;
     }
     case "customer.subscription.updated":
