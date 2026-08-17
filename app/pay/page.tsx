@@ -4,7 +4,8 @@ import { getPrisma } from "../../src/db/client.ts";
 import { getCurrentUser } from "../../src/auth/session.ts";
 import { tieneStripe, getStripe } from "../../src/lib/stripe.ts";
 import { ANON_COOKIE } from "../../src/lib/funnel.ts";
-import { formatPrice } from "../../src/lib/locale.ts";
+import { formatPrice, isLocale, DEFAULT_LOCALE, LANG_COOKIE } from "../../src/lib/locale.ts";
+import { ui } from "../../src/lib/ui.ts";
 import { CheckoutForm } from "../../src/ui/CheckoutForm.tsx";
 
 export const dynamic = "force-dynamic";
@@ -17,12 +18,15 @@ export default async function Pay({ searchParams }: { searchParams: Promise<Reco
   if (!tieneStripe()) redirect("/pricing");
   const prisma = await getPrisma();
   const user = await getCurrentUser();
+  const jar = await cookies();
+  const cookieLang = jar.get(LANG_COOKIE)?.value;
+  const locale = isLocale(cookieLang) ? cookieLang! : DEFAULT_LOCALE;
 
   // Transcripción a desbloquear (opcional). Verifica propiedad.
   let tr: any = null;
   if (sp.t) {
     tr = await prisma.transcription.findUnique({ where: { id: sp.t } });
-    const anon = (await cookies()).get(ANON_COOKIE)?.value;
+    const anon = jar.get(ANON_COOKIE)?.value;
     const owns = tr && ((user && tr.userId === user.id) || (!!tr.anonSession && !!anon && tr.anonSession === anon));
     if (!owns) tr = null;
   }
@@ -49,7 +53,7 @@ export default async function Pay({ searchParams }: { searchParams: Promise<Reco
       trialDays={TRIAL_DAYS}
       transcriptionId={tr?.id || ""}
       prefillEmail={user?.email || ""}
-      titulo={tr?.titulo || ""}
+      s={ui(locale)}
     />
   );
 }

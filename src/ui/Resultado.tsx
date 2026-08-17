@@ -1,30 +1,29 @@
 import { Editor } from "./Editor.tsx";
 import { ProgressBar } from "./ProgressBar.tsx";
+import type { UIStrings } from "../lib/ui.ts";
 
-type C = Record<string, string>;
 export interface TrView {
   id: string; titulo: string; mode: string; language: string; status: string;
   locked: boolean; preview: string; texto: string; previewSeg: number; duracionSeg: number | null; fileDeleted: boolean; error?: string | null;
 }
 
 const fmtDur = (s?: number | null) => (!s ? "" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`);
+const f = (str: string, vars: Record<string, string>) => Object.keys(vars).reduce((a, k) => a.replaceAll(`{${k}}`, vars[k]!), str);
 
-// Opciones del panel lateral (como voice2texts.com). En estado bloqueado, TODAS llevan al checkout.
-const SIDEBAR: { titulo: string; items: [string, string][] }[] = [
-  { titulo: "Editar", items: [["🔎", "Buscar y reemplazar"], ["💾", "Guardar cambios"]] },
-  { titulo: "Exportar", items: [["📄", "Descargar PDF"], ["📝", "Descargar DOCX"], ["🗒️", "Descargar TXT"], ["🎬", "Descargar SRT"]] },
-  { titulo: "Más", items: [["🕒", "Mostrar marcas de tiempo"], ["🌐", "Traducir"], ["🔗", "Compartir transcripción"], ["⬇️", "Descargar audio"], ["✏️", "Renombrar archivo"], ["📁", "Mover"], ["🗑️", "Eliminar archivo"]] },
-];
-
-function Sidebar({ ctaHref }: { ctaHref: string }) {
+function Sidebar({ ctaHref, s }: { ctaHref: string; s: UIStrings }) {
+  const secciones: { titulo: string; items: [string, string][] }[] = [
+    { titulo: s.sec_edit!, items: [["🔎", s.it_search!], ["💾", s.it_save!]] },
+    { titulo: s.sec_export!, items: [["📄", s.it_pdf!], ["📝", s.it_docx!], ["🗒️", s.it_txt!], ["🎬", s.it_srt!]] },
+    { titulo: s.sec_more!, items: [["🕒", s.it_ts!], ["🌐", s.it_translate!], ["🔗", s.it_share!], ["⬇️", s.it_audio!], ["✏️", s.it_rename!], ["📁", s.it_move!], ["🗑️", s.it_delete!]] },
+  ];
   return (
     <aside style={{ width: 260, flexShrink: 0 }}>
       <div className="card" style={{ padding: 16 }}>
-        {SIDEBAR.map((sec) => (
+        {secciones.map((sec) => (
           <div key={sec.titulo} style={{ marginBottom: 14 }}>
             <div className="muted" style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, margin: "4px 6px 6px" }}>{sec.titulo}</div>
             {sec.items.map(([ico, label]) => (
-              <a key={label} href={ctaHref} title="Desbloquea para usar esta opción"
+              <a key={label} href={ctaHref} title={s.item_locked}
                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 6px", fontSize: 14, borderRadius: 8, textDecoration: "none" }}>
                 <span style={{ width: 20, textAlign: "center" }}>{ico}</span>
                 <span style={{ flex: 1 }}>{label}</span>
@@ -39,12 +38,11 @@ function Sidebar({ ctaHref }: { ctaHref: string }) {
 }
 
 /** Vista de una transcripción: procesando / error / preview bloqueada (paywall + sidebar) / completa. */
-export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel }: { tr: TrView; c?: C; locale?: string; precio?: string; ctaHref: string; trialDays?: number; todayLabel?: string }) {
+export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel = "", s }: { tr: TrView; s: UIStrings; precio?: string; ctaHref: string; trialDays?: number; todayLabel?: string }) {
   const procesando = tr.status === "PROCESSING" || tr.status === "QUEUED";
   const restante = Math.max(0, (tr.duracionSeg || 0) - (tr.previewSeg || 25));
   const lineas = Math.min(22, Math.max(5, Math.round(restante / 4)));
-  const ctaTexto = `Desbloquear ahora${todayLabel ? ` — ${todayLabel}` : ""}`;
-  const ctaSub = todayLabel ? `${todayLabel} los primeros ${trialDays} días, luego ${precio || ""}/mes · Cancela cuando quieras.` : `Cancela cuando quieras.`;
+  const vars = { today: todayLabel, price: precio || "", n: String(trialDays), x: fmtDur(restante) };
 
   return (
     <>
@@ -53,14 +51,13 @@ export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel }: { 
         {tr.mode} · {tr.language}{tr.duracionSeg ? ` · ${fmtDur(tr.duracionSeg)}` : ""}
       </div>
 
-      {procesando && <ProgressBar id={tr.id} />}
-      {tr.status === "ERROR" && <div className="err">{tr.error || "No se pudo transcribir. Prueba con otro archivo o inténtalo de nuevo."}</div>}
+      {procesando && <ProgressBar id={tr.id} title={s.proc_title!} sub={s.proc_sub!} />}
+      {tr.status === "ERROR" && <div className="err">{tr.error || s.err}</div>}
 
       {tr.status === "DONE" && !tr.locked && <Editor id={tr.id} initial={tr.texto} />}
 
       {tr.status === "DONE" && tr.locked && (
         <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
-          {/* Columna principal: preview + resto borroso + paywall */}
           <div style={{ flex: 1, minWidth: 300 }}>
             <div className="card" style={{ padding: 22, fontSize: 15.5, lineHeight: 1.75, whiteSpace: "pre-wrap" }}>{tr.preview}</div>
 
@@ -72,20 +69,17 @@ export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel }: { 
               </div>
               <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: 20, background: "linear-gradient(180deg, rgba(0,0,0,0) 0%, var(--bg) 40%)" }}>
                 <div style={{ fontSize: 36 }}>🔒</div>
-                <h3 style={{ margin: "10px 0 4px" }}>{restante > 0 ? `Te faltan ${fmtDur(restante)} de transcripción` : "Desbloquea la transcripción"}</h3>
-                <p className="muted" style={{ maxWidth: 440, marginBottom: 18 }}>Esto es solo el comienzo. Desbloquea la transcripción <b>completa</b>, edítala y descárgala en TXT, DOCX, PDF y SRT.</p>
-                <a href={ctaHref} className="btn btn-primary btn-lg">{ctaTexto}</a>
-                <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>{ctaSub}</p>
+                <h3 style={{ margin: "10px 0 4px" }}>{restante > 0 ? f(s.missing!, vars) : s.unlock_title}</h3>
+                <p className="muted" style={{ maxWidth: 440, marginBottom: 18 }}>{s.pitch}</p>
+                <a href={ctaHref} className="btn btn-primary btn-lg">{f(s.cta!, vars)}</a>
+                <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>{f(s.cta_sub!, vars)}</p>
               </div>
             </div>
 
-            {tr.fileDeleted && (
-              <p className="muted" style={{ marginTop: 14, fontSize: 13 }}>⚠️ El archivo original ha caducado. Tras suscribirte, vuelve a subirlo para completar la transcripción.</p>
-            )}
+            {tr.fileDeleted && <p className="muted" style={{ marginTop: 14, fontSize: 13 }}>⚠️ {s.expired}</p>}
           </div>
 
-          {/* Panel lateral: todas las opciones → checkout (sin punto de fuga) */}
-          <Sidebar ctaHref={ctaHref} />
+          <Sidebar ctaHref={ctaHref} s={s} />
         </div>
       )}
     </>

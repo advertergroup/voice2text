@@ -5,6 +5,7 @@ import { getPrisma } from "../../../src/db/client.ts";
 import { AppShell } from "../../../src/ui/AppShell.tsx";
 import { Resultado } from "../../../src/ui/Resultado.tsx";
 import { formatPrice } from "../../../src/lib/locale.ts";
+import { ui } from "../../../src/lib/ui.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export default async function Detalle({ params }: { params: Promise<{ id: string
   return (
     <AppShell brand={t(c, "brand.name")} email={user.email} role={user.role} active="dash">
       <a href="/dashboard" className="muted" style={{ fontSize: 14 }}>← Volver</a>
-      <Resultado tr={tr as any} c={c} locale={locale} precio={precio} ctaHref={`/pay?t=${tr.id}`} trialDays={trialDays} todayLabel={todayLabel} />
+      <Resultado tr={tr as any} s={ui(locale)} precio={precio} ctaHref={`/pay?t=${tr.id}`} trialDays={trialDays} todayLabel={todayLabel} />
     </AppShell>
   );
 }
