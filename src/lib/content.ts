@@ -119,6 +119,14 @@ export const DEFAULT_CONTENT: ContentDef[] = [
   { key: "checkout.button.ads", grupo: "Checkout · Google Ads", label: "Botón (Google Ads) · vacío = usa el normal", value: "", orden: 2 },
   { key: "checkout.legal.ads", grupo: "Checkout · Google Ads", label: "Texto legal completo HTML (Google Ads) · vacío = usa el normal", value: "", multiline: true, orden: 3 },
   { key: "checkout.secure.ads", grupo: "Checkout · Google Ads", label: "Nota pago seguro (Google Ads) · vacío = usa el normal", value: "", orden: 4 },
+
+  // ---- Oferta de salida (exit-intent en el checkout) ---- placeholders: {oferta} {normal} {monthly} {days}
+  { key: "exitoffer.enabled", grupo: "Oferta de salida", label: "Activar (1 = sí · 0 = no)", value: "1", orden: 1 },
+  { key: "exitoffer.price", grupo: "Oferta de salida", label: "Precio de la oferta (céntimos, ej: 59 = $0.59)", value: "59", orden: 2 },
+  { key: "exitoffer.title", grupo: "Oferta de salida", label: "Titular", value: "Espera — te la dejamos más barata", orden: 3 },
+  { key: "exitoffer.text", grupo: "Oferta de salida", label: "Texto · {oferta} {normal} {monthly} {days}", value: "Tu transcripción ya está lista. Llévatela hoy por {oferta} en vez de {normal}. {days} días de acceso y, si no cancelas, la suscripción sigue a {monthly} al mes.", multiline: true, orden: 4 },
+  { key: "exitoffer.accept", grupo: "Oferta de salida", label: "Botón de aceptar · {oferta}", value: "Sí, quiero mi transcripción por {oferta}", orden: 5 },
+  { key: "exitoffer.decline", grupo: "Oferta de salida", label: "Enlace de rechazar", value: "No, gracias", orden: 6 },
 ];
 
 /**

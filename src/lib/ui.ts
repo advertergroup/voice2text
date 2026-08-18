@@ -27,6 +27,9 @@ export const UI_ES: UIStrings = {
   reupload_title: "Sube tu archivo completo",
   reupload_desc: "Tu suscripción está activa. Como el archivo era grande, súbelo de nuevo (completo) para obtener la transcripción entera.",
   reupload_btn: "Subir archivo completo", uploading: "Subiendo y transcribiendo…",
+  eo_title: "Espera — te la dejamos más barata",
+  eo_text: "Tu transcripción ya está lista. Llévatela hoy por {oferta} en vez de {normal}. {days} días de acceso y, si no cancelas, la suscripción sigue a {monthly} al mes.",
+  eo_accept: "Sí, quiero mi transcripción por {oferta}", eo_decline: "No, gracias",
 };
 
 export const UI_EN: UIStrings = {
@@ -53,6 +56,9 @@ export const UI_EN: UIStrings = {
   reupload_title: "Upload your full file",
   reupload_desc: "Your subscription is active. Since the file was large, upload it again (in full) to get the complete transcription.",
   reupload_btn: "Upload full file", uploading: "Uploading and transcribing…",
+  eo_title: "Wait — we'll make it cheaper",
+  eo_text: "Your transcription is ready. Get it today for {oferta} instead of {normal}. {days} days of access and, unless you cancel, the subscription continues at {monthly}/mo.",
+  eo_accept: "Yes, I want my transcription for {oferta}", eo_decline: "No, thanks",
 };
 
 /** Devuelve los textos de UI para un idioma (fallback a inglés). */

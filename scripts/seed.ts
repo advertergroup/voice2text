@@ -9,6 +9,7 @@ import { ui } from "../src/lib/ui.ts";
 // Textos de checkout (versión normal): se siembran por idioma desde ui.ts. Los .ads quedan vacíos (= usar normal).
 const CHECKOUT_MAP: Record<string, string> = {
   "checkout.subtitle": "pay_desc", "checkout.button": "cta", "checkout.secure": "pay_secure",
+  "exitoffer.title": "eo_title", "exitoffer.text": "eo_text", "exitoffer.accept": "eo_accept", "exitoffer.decline": "eo_decline",
 };
 // Línea legal completa (HTML con enlaces) por idioma.
 const legalHtml = (loc: string) => {

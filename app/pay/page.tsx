@@ -50,6 +50,16 @@ export default async function Pay({ searchParams }: { searchParams: Promise<Reco
     secure: pick("checkout.secure"),
   };
 
+  // Oferta de salida (exit-intent): precio menor hoy si va a abandonar.
+  const eoPrice = parseInt(cont["exitoffer.price"] || "0", 10);
+  const exitOffer = (cont["exitoffer.enabled"] === "1" && eoPrice > 0 && eoPrice < TRIPWIRE_CENTS) ? {
+    label: formatPrice(eoPrice, "USD"),
+    title: cont["exitoffer.title"] || "",
+    text: cont["exitoffer.text"] || "",
+    accept: cont["exitoffer.accept"] || "",
+    decline: cont["exitoffer.decline"] || "",
+  } : null;
+
   // PaymentIntent del cargo de hoy (guarda la tarjeta para la suscripción posterior).
   const stripe = await getStripe();
   const pi = await stripe.paymentIntents.create({
@@ -70,6 +80,7 @@ export default async function Pay({ searchParams }: { searchParams: Promise<Reco
       prefillEmail={user?.email || ""}
       s={ui(locale)}
       textos={textos}
+      exitOffer={exitOffer}
     />
   );
 }
