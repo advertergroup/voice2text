@@ -15,6 +15,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const prisma = await getPrisma();
   const tr = await prisma.transcription.findUnique({ where: { id } });
   if (!tr || tr.userId !== user.id) return new Response("No encontrado", { status: 404 });
+  if (tr.locked) return new Response("Bloqueada: activa el plan para descargar", { status: 403 });
 
   const segs = Array.isArray(tr.segmentos) ? tr.segmentos as { start: number; end: number; text: string }[] : [];
   let body: Buffer;

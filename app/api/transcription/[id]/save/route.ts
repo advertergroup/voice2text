@@ -10,6 +10,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const prisma = await getPrisma();
   const tr = await prisma.transcription.findUnique({ where: { id } });
   if (!tr || tr.userId !== user.id) return NextResponse.json({ ok: false }, { status: 404 });
+  if (tr.locked) return NextResponse.json({ ok: false, error: "locked" }, { status: 403 });
   await prisma.transcription.update({ where: { id }, data: { texto: String(texto ?? "") } });
   return NextResponse.json({ ok: true });
 }

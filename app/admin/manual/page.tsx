@@ -28,8 +28,10 @@ export default async function AdminManual({ searchParams }: { searchParams: Prom
       <AdminTabs active="manual" />
       {sp.done && <div className="ok">✓ Archivo subido; se está transcribiendo. El usuario lo verá en su página en unos minutos.</div>}
       <p className="muted" style={{ fontSize: 14 }}>
-        URLs que no se pudieron descargar automáticamente (YouTube/Instagram…). Descarga tú el vídeo/audio de la URL y súbelo aquí:
-        se transcribe con el pipeline normal (preview + candado si el usuario no ha pagado; completa si es de pago) y aparece en la página del usuario.
+        URLs que no se pudieron descargar automáticamente (YouTube/Instagram…). Dos formas de completarlas:
+        <br/>• <b>Audio/vídeo</b> descargado de la URL → se transcribe con Whisper.
+        <br/>• <b>Transcripción ya hecha</b> (<code>.txt</code>, <code>.srt</code> o <code>.vtt</code>, p. ej. los subtítulos de YouTube) → se usa directamente, sin gastar CPU.
+        <br/>En ambos casos el usuario la ve con preview + candado si no ha pagado (completa si es de pago).
       </p>
 
       {pendientes.length === 0 ? (
