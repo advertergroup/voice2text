@@ -31,7 +31,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   const s = ui(locale);
 
   return (
-    <>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       {/* Cabecera mínima: logo (sin enlace) + idioma. Sin menú, sin login/registro → sin puntos de fuga. */}
       <div className="nav">
         <div className="container nav-in">
@@ -41,17 +41,17 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
         </div>
       </div>
 
-      <section style={{ paddingTop: 26, paddingBottom: 40 }}>
+      <section style={{ flex: 1, paddingTop: 26, paddingBottom: 40 }}>
         <div className="container" style={{ maxWidth: 900 }}>
           <Resultado tr={tr as any} s={s} precio={precio} ctaHref={`/pay?t=${tr.id}`} trialDays={trialDays} todayLabel={todayLabel} />
         </div>
       </section>
 
-      <div style={{ textAlign: "center", padding: "24px 16px", color: "var(--muted)", fontSize: 12 }}>
+      <div style={{ textAlign: "center", padding: "20px 16px", color: "var(--muted)", fontSize: 12, borderTop: "1px solid var(--border)" }}>
         <a href="/terms" style={{ color: "var(--muted)" }}>{s.legal_terms}</a> ·
         <a href="/refund" style={{ color: "var(--muted)" }}> {s.legal_sub}</a> ·
         <a href="/privacy" style={{ color: "var(--muted)" }}> {s.legal_privacy}</a>
       </div>
-    </>
+    </div>
   );
 }

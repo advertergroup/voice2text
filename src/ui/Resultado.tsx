@@ -72,7 +72,6 @@ export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel = "",
                 <h3 style={{ margin: "10px 0 4px" }}>{restante > 0 ? f(s.missing!, vars) : s.unlock_title}</h3>
                 <p className="muted" style={{ maxWidth: 440, marginBottom: 18 }}>{s.pitch}</p>
                 <a href={ctaHref} className="btn btn-primary btn-lg">{f(s.cta!, vars)}</a>
-                <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>{f(s.cta_sub!, vars)}</p>
               </div>
             </div>
 
