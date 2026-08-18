@@ -8,7 +8,7 @@ import { getCurrentUser } from "../../../src/auth/session.ts";
 import { transcribe, descargarDeUrl, probeDuration, extraerPreview, plataformaDeUrl } from "../../../src/lib/transcribe.ts";
 import { notifyManualJob } from "../../../src/lib/mailer.ts";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB, ALLOWED_EXT, sniffMedia, extSegura, scanClamAV } from "../../../src/lib/upload-guard.ts";
-import { PREVIEW_SECONDS, PREVIEW_WORDS, FILE_RETENTION_HOURS, ANON_UPLOAD_LIMIT, ANON_COOKIE, esPagado, cleanupExpired, recortarPalabras } from "../../../src/lib/funnel.ts";
+import { PREVIEW_SECONDS, PREVIEW_WORDS, FILE_RETENTION_HOURS, ANON_COOKIE, esPagado, cleanupExpired, recortarPalabras, quotaAgotada } from "../../../src/lib/funnel.ts";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -40,11 +40,9 @@ export async function POST(req: Request) {
   const partial = String(f.get("partial") ?? "0") === "1"; // solo se subió el inicio (archivo grande)
   const prisma = await getPrisma();
 
-  // Límite anti-abuso para subidas anónimas.
-  if (!user && anon) {
-    const desde = new Date(Date.now() - 3600e3);
-    const n = await prisma.transcription.count({ where: { anonSession: anon, createdAt: { gt: desde } } });
-    if (n >= ANON_UPLOAD_LIMIT) return fail("limit");
+  // Cuota gratuita: 1 transcripción por visitante/cuenta; para más → activar el plan.
+  if (!esPagado(user) && await quotaAgotada(user?.id ?? null, anon)) {
+    return fail("quota");
   }
 
   let titulo = "", sourceType: "FILE" | "URL" = "FILE", sourceUrl: string | null = null, fileKey: string | null = null;

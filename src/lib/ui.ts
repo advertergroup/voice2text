@@ -42,6 +42,9 @@ export const UI_ES: UIStrings = {
   acct_canceled_note: "Suscripción cancelada. Mantienes el acceso hasta el {date}.",
   acct_cancel_ok: "Tu suscripción se ha cancelado. Mantienes el acceso hasta el final del periodo.",
   acct_see_plans: "Ver planes",
+  quota_title: "Ya has usado tu transcripción gratuita",
+  quota_desc: "Activa el plan mensual y consigue transcripciones de audio y vídeo ilimitadas, más de 90 idiomas, todos los modos y descargas en TXT, DOCX, PDF y SRT.",
+  quota_cta: "Activar plan — {today} hoy",
 };
 
 export const UI_EN: UIStrings = {
@@ -83,6 +86,9 @@ export const UI_EN: UIStrings = {
   acct_canceled_note: "Subscription canceled. You keep access until {date}.",
   acct_cancel_ok: "Your subscription has been canceled. You keep access until the end of the period.",
   acct_see_plans: "See plans",
+  quota_title: "You've used your free transcription",
+  quota_desc: "Activate the monthly plan and get unlimited audio & video transcriptions, 90+ languages, every transcription mode and TXT, DOCX, PDF and SRT downloads.",
+  quota_cta: "Activate plan — {today} today",
 };
 
 /** Devuelve los textos de UI para un idioma (fallback a inglés). */

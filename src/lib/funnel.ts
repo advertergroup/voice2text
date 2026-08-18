@@ -24,6 +24,18 @@ export function esPagado(u: { subStatus?: string | null } | null | undefined): b
   return !!u && (u.subStatus === "ACTIVE" || u.subStatus === "TRIAL");
 }
 
+export const FREE_QUOTA = Number(process.env.FREE_QUOTA || 1); // transcripciones gratis por visitante/cuenta
+
+/** ¿Ha agotado ya su transcripción gratuita? (no cuenta las que dieron ERROR) */
+export async function quotaAgotada(userId: string | null, anon: string | null): Promise<boolean> {
+  const prisma = await getPrisma();
+  const where = userId ? { userId, status: { not: "ERROR" as const } }
+    : anon ? { anonSession: anon, status: { not: "ERROR" as const } } : null;
+  if (!where) return false;
+  const n = await prisma.transcription.count({ where });
+  return n >= FREE_QUOTA;
+}
+
 /** Borra los archivos de transcripciones bloqueadas caducadas (no pagadas). Oportunista y barato. */
 export async function cleanupExpired(): Promise<void> {
   try {

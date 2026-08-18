@@ -64,9 +64,9 @@ const basePlanes = [
   { key: "trial", nombre: "Prueba", precioCent: 50, periodo: "trial", badge: "7 días", botonTexto: "Empezar prueba", orden: 1, destacado: false,
     descripcion: "Prueba 7 días por 0,50 €. Después 39,90 €/mes si no cancelas.",
     caracteristicas: ["Transcripciones de audio y vídeo ilimitadas", "Todos los modos de transcripción", "Exporta a TXT, DOCX, PDF y SRT", "Cancela cuando quieras"] },
-  { key: "premium", nombre: "Premium", precioCent: 3990, periodo: "month", badge: "Más popular", botonTexto: "Hazte Premium", orden: 2, destacado: true,
+  { key: "premium", nombre: "Premium", precioCent: 4999, moneda: "USD", periodo: "month", badge: "Más popular", botonTexto: "Hazte Premium", orden: 2, destacado: true,
     descripcion: "Todo ilimitado, con soporte prioritario.",
-    caracteristicas: ["Transcripciones de audio y vídeo ilimitadas", "Más de 90 idiomas y acentos", "Todos los modos de transcripción", "Exporta a TXT, DOCX, PDF y SRT", "Acceso inmediato y soporte prioritario"] },
+    caracteristicas: ["Transcripciones de audio y vídeo ilimitadas", "Soporte para más de 90 idiomas y acentos", "Modos de transcripción diferentes", "Exportar en TXT, DOCX, PDF y SRT", "Acceso inmediato y soporte prioritario"] },
 ];
 for (const locale of LOCALE_CODES) {
   for (const pl of basePlanes) {
@@ -77,7 +77,7 @@ for (const locale of LOCALE_CODES) {
       create: {
         key: pl.key, locale,
         nombre: trp?.nombre ?? pl.nombre,
-        precioCent: pl.precioCent, periodo: pl.periodo,
+        precioCent: pl.precioCent, moneda: (pl as any).moneda ?? "EUR", periodo: pl.periodo,
         badge: trp?.badge ?? pl.badge,
         botonTexto: trp?.botonTexto ?? pl.botonTexto,
         descripcion: trp?.descripcion ?? pl.descripcion,
