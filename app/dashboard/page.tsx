@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 const ESTADO: Record<string, { cls: string; label: string }> = {
   DONE: { cls: "done", label: "Lista" }, PROCESSING: { cls: "proc", label: "Procesando" },
+  MANUAL: { cls: "proc", label: "⏳ En proceso · <24h" },
   QUEUED: { cls: "queued", label: "En cola" }, ERROR: { cls: "err", label: "Error" },
 };
 
