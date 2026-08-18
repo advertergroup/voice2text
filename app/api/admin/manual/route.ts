@@ -10,7 +10,7 @@ import { PREVIEW_SECONDS, PREVIEW_WORDS, FILE_RETENTION_HOURS, esPagado, recorta
 import { sendMail } from "../../../../src/lib/mailer.ts";
 import { parseTranscriptFile } from "../../../../src/lib/subs.ts";
 
-const TEXT_EXTS = new Set([".txt", ".srt", ".vtt"]);
+const TEXT_EXTS = new Set([".txt", ".srt", ".vtt", ".csv"]);
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, modo: "texto" });
   }
 
-  if (!ALLOWED_EXT.has(ext)) return NextResponse.json({ ok: false, error: "tipo no válido (audio, vídeo, .txt, .srt o .vtt)" }, { status: 400 });
+  if (!ALLOWED_EXT.has(ext)) return NextResponse.json({ ok: false, error: "tipo no válido (audio, vídeo, .txt, .srt, .vtt o .csv)" }, { status: 400 });
   if (!sniffMedia(buf)) return NextResponse.json({ ok: false, error: "no es audio/vídeo real" }, { status: 400 });
 
   await mkdir(UPLOAD_DIR, { recursive: true });

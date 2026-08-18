@@ -24,7 +24,7 @@ export function ManualUpload({ id }: { id: string }) {
       <button className="btn btn-primary" disabled={busy} onClick={() => !busy && inputRef.current?.click()}>
         {busy ? "Subiendo…" : "📤 Subir archivo"}
       </button>
-      <input ref={inputRef} type="file" accept="audio/*,video/*,.txt,.srt,.vtt" style={{ display: "none" }}
+      <input ref={inputRef} type="file" accept="audio/*,video/*,.txt,.srt,.vtt,.csv" style={{ display: "none" }}
         onChange={(e) => { const f = e.target.files?.[0]; if (f) subir(f); }} />
       {err && <div className="err" style={{ marginTop: 8, fontSize: 13 }}>{err}</div>}
     </div>

@@ -30,7 +30,7 @@ export default async function AdminManual({ searchParams }: { searchParams: Prom
       <p className="muted" style={{ fontSize: 14 }}>
         URLs que no se pudieron descargar automáticamente (YouTube/Instagram…). Dos formas de completarlas:
         <br/>• <b>Audio/vídeo</b> descargado de la URL → se transcribe con Whisper.
-        <br/>• <b>Transcripción ya hecha</b> (<code>.txt</code>, <code>.srt</code> o <code>.vtt</code>, p. ej. los subtítulos de YouTube) → se usa directamente, sin gastar CPU.
+        <br/>• <b>Transcripción ya hecha</b> (<code>.txt</code>, <code>.srt</code>, <code>.vtt</code> o <code>.csv</code>, p. ej. los subtítulos de YouTube o el export de otra herramienta) → se usa directamente, sin gastar CPU.
         <br/>En ambos casos el usuario la ve con preview + candado si no ha pagado (completa si es de pago).
       </p>
 
