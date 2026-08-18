@@ -1,11 +1,12 @@
 import { Editor } from "./Editor.tsx";
 import { ProgressBar } from "./ProgressBar.tsx";
 import { ReuploadForm } from "./ReuploadForm.tsx";
+import { ManualNotice } from "./ManualNotice.tsx";
 import type { UIStrings } from "../lib/ui.ts";
 
 export interface TrView {
   id: string; titulo: string; mode: string; language: string; status: string;
-  locked: boolean; preview: string; texto: string; previewSeg: number; duracionSeg: number | null; fileDeleted: boolean; error?: string | null;
+  locked: boolean; preview: string; texto: string; previewSeg: number; duracionSeg: number | null; fileDeleted: boolean; error?: string | null; contactEmail?: string | null;
 }
 
 const fmtDur = (s?: number | null) => (!s ? "" : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`);
@@ -53,6 +54,7 @@ export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel = "",
       </div>
 
       {procesando && <ProgressBar id={tr.id} title={s.proc_title!} sub={s.proc_sub!} />}
+      {tr.status === "MANUAL" && <ManualNotice id={tr.id} s={s} hasEmail={!!tr.contactEmail} />}
       {tr.status === "ERROR" && <div className="err">{tr.error || s.err}</div>}
 
       {tr.status === "DONE" && !tr.locked && (tr.texto ? <Editor id={tr.id} initial={tr.texto} /> : <ReuploadForm id={tr.id} s={s} />)}

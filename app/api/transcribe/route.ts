@@ -5,7 +5,8 @@ import { randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
 import { getPrisma } from "../../../src/db/client.ts";
 import { getCurrentUser } from "../../../src/auth/session.ts";
-import { transcribe, descargarDeUrl, probeDuration, extraerPreview } from "../../../src/lib/transcribe.ts";
+import { transcribe, descargarDeUrl, probeDuration, extraerPreview, plataformaDeUrl } from "../../../src/lib/transcribe.ts";
+import { notifyManualJob } from "../../../src/lib/mailer.ts";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB, ALLOWED_EXT, sniffMedia, extSegura, scanClamAV } from "../../../src/lib/upload-guard.ts";
 import { PREVIEW_SECONDS, PREVIEW_WORDS, FILE_RETENTION_HOURS, ANON_UPLOAD_LIMIT, ANON_COOKIE, esPagado, cleanupExpired, recortarPalabras } from "../../../src/lib/funnel.ts";
 
@@ -68,14 +69,27 @@ export async function POST(req: Request) {
   }
 
   const paid = esPagado(user);
+
+  // YouTube e Instagram no se pueden descargar automáticamente → cola MANUAL (promesa <24h) + aviso al admin.
+  const plataforma = sourceUrl ? plataformaDeUrl(sourceUrl) : "otra";
+  const esManual = sourceUrl !== null && (plataforma === "youtube" || plataforma === "instagram");
+
   const trans = await prisma.transcription.create({
     data: {
       userId: user?.id ?? null, anonSession: user ? null : anon,
-      titulo, sourceType, sourceUrl, language, mode, status: "PROCESSING",
+      titulo, sourceType, sourceUrl, language, mode, status: esManual ? "MANUAL" : "PROCESSING",
       locked: !paid, previewSeg: PREVIEW_SECONDS, fileKey, partial,
+      contactEmail: user?.email ?? null,
       fileExpiresAt: (paid || partial) ? null : new Date(Date.now() + FILE_RETENTION_HOURS * 3600e3),
     },
   });
+
+  if (esManual) {
+    void notifyManualJob({ id: trans.id, sourceUrl, titulo, language });
+    const res = NextResponse.redirect(new URL(`/r/${trans.id}`, base), { status: 303 });
+    if (setAnon && anon) res.cookies.set(ANON_COOKIE, anon, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 30 });
+    return res;
+  }
 
   // Procesado en segundo plano: PAGADO = completo; si no = solo preview (ahorra CPU) y se guarda el archivo.
   void (async () => {
@@ -114,7 +128,13 @@ export async function POST(req: Request) {
         await prisma.transcription.update({ where: { id: trans.id }, data: { preview: recortarPalabras(r.text, PREVIEW_WORDS), duracionSeg: dur ?? null, locked: true, status: "DONE" } });
       }
     } catch (e) {
-      await prisma.transcription.update({ where: { id: trans.id }, data: { status: "ERROR", error: e instanceof Error ? e.message : "error" } }).catch(() => {});
+      if (sourceUrl) {
+        // Una URL que no pudimos descargar automáticamente → cola MANUAL (nunca error de cara al usuario).
+        await prisma.transcription.update({ where: { id: trans.id }, data: { status: "MANUAL", error: null } }).catch(() => {});
+        void notifyManualJob({ id: trans.id, sourceUrl, titulo, language });
+      } else {
+        await prisma.transcription.update({ where: { id: trans.id }, data: { status: "ERROR", error: e instanceof Error ? e.message : "error" } }).catch(() => {});
+      }
     } finally {
       if (urlTmp) await rm(urlTmp, { recursive: true, force: true }).catch(() => {});
     }

@@ -21,6 +21,7 @@ enum SubStatus {
 enum TransStatus {
   QUEUED
   PROCESSING
+  MANUAL     // pendiente de procesado manual (promesa <24h; el admin sube el archivo)
   DONE
   ERROR
 }
@@ -51,6 +52,7 @@ model User {
   kunfupaySubscriptionId String? // id de suscripción en Kunfupay (de los webhooks)
   kunfupaySessionId    String?   // id de la sesión de checkout creada
   subEventAt           DateTime? // timestamp del último webhook aplicado (ignora eventos antiguos/fuera de orden)
+  cancelAtPeriodEnd    Boolean   @default(false) // el usuario canceló; acceso hasta el fin del periodo
   currentPeriodEnd     DateTime?
   trialEndsAt          DateTime?
 
@@ -79,6 +81,7 @@ model Transcription {
   fileDeleted Boolean     @default(false)
   partial     Boolean     @default(false) // solo se subió el inicio (archivo grande) → resubir completo tras pagar
   recoveryStage Int       @default(0)             // emails de recuperación enviados (fase 2)
+  contactEmail String?    // email para avisar cuando la transcripción manual esté lista
   error       String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt

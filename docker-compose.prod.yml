@@ -11,6 +11,11 @@ services:
     volumes:
       - v2tpgdata:/var/lib/postgresql/data
 
+  # Generador de PO tokens para yt-dlp/YouTube (gratis). La app lo usa vía YTDLP_ARGS.
+  bgutil:
+    image: brainicism/bgutil-ytdlp-pot-provider
+    restart: unless-stopped
+
   app:
     build: .
     restart: unless-stopped

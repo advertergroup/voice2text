@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     case "customer.subscription.created": {
       const sub = evt.data.object;
       const map: Record<string, string> = { active: "ACTIVE", trialing: "TRIAL", past_due: "PAST_DUE", canceled: "CANCELED", unpaid: "PAST_DUE" };
-      await setSub(sub.customer, { subStatus: map[sub.status] || "ACTIVE", stripeSubscriptionId: sub.id, currentPeriodEnd: sub.current_period_end ? new Date(sub.current_period_end * 1000) : null });
+      await setSub(sub.customer, { subStatus: map[sub.status] || "ACTIVE", stripeSubscriptionId: sub.id, cancelAtPeriodEnd: !!sub.cancel_at_period_end, currentPeriodEnd: sub.current_period_end ? new Date(sub.current_period_end * 1000) : null });
       break;
     }
     case "customer.subscription.deleted": {

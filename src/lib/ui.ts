@@ -30,6 +30,18 @@ export const UI_ES: UIStrings = {
   eo_title: "Espera — te la dejamos más barata",
   eo_text: "Tu transcripción ya está lista. Llévatela hoy por {oferta} en vez de {normal}. {days} días de acceso y, si no cancelas, la suscripción sigue a {monthly} al mes.",
   eo_accept: "Sí, quiero mi transcripción por {oferta}", eo_decline: "No, gracias",
+  manual_title: "Tu transcripción estará lista en menos de 24 horas",
+  manual_desc: "Los vídeos de esta plataforma los procesa nuestro equipo. Aparecerá aquí automáticamente en cuanto esté lista — guarda esta página.",
+  manual_email_q: "¿Te avisamos por email cuando esté lista?",
+  manual_email_btn: "Avisarme", manual_email_ok: "¡Hecho! Te avisaremos en cuanto esté lista.",
+  acct_title: "Mi cuenta", acct_email: "Email", acct_name: "Nombre", acct_sub: "Suscripción",
+  acct_status_none: "Sin suscripción", acct_status_trial: "En periodo de prueba", acct_status_active: "Activa",
+  acct_status_pastdue: "Pago pendiente", acct_status_canceled: "Cancelada",
+  acct_renews: "Se renueva el", acct_ends: "Acceso hasta el", acct_trans: "Transcripciones",
+  acct_cancel: "Cancelar suscripción", acct_cancel_confirm: "¿Seguro que quieres cancelar? Mantendrás el acceso hasta el final del periodo ya pagado.",
+  acct_canceled_note: "Suscripción cancelada. Mantienes el acceso hasta el {date}.",
+  acct_cancel_ok: "Tu suscripción se ha cancelado. Mantienes el acceso hasta el final del periodo.",
+  acct_see_plans: "Ver planes",
 };
 
 export const UI_EN: UIStrings = {
@@ -59,6 +71,18 @@ export const UI_EN: UIStrings = {
   eo_title: "Wait — we'll make it cheaper",
   eo_text: "Your transcription is ready. Get it today for {oferta} instead of {normal}. {days} days of access and, unless you cancel, the subscription continues at {monthly}/mo.",
   eo_accept: "Yes, I want my transcription for {oferta}", eo_decline: "No, thanks",
+  manual_title: "Your transcription will be ready within 24 hours",
+  manual_desc: "Videos from this platform are processed by our team. It will appear here automatically once it's ready — keep this page.",
+  manual_email_q: "Want an email when it's ready?",
+  manual_email_btn: "Notify me", manual_email_ok: "Done! We'll email you as soon as it's ready.",
+  acct_title: "My account", acct_email: "Email", acct_name: "Name", acct_sub: "Subscription",
+  acct_status_none: "No subscription", acct_status_trial: "On trial", acct_status_active: "Active",
+  acct_status_pastdue: "Payment past due", acct_status_canceled: "Canceled",
+  acct_renews: "Renews on", acct_ends: "Access until", acct_trans: "Transcriptions",
+  acct_cancel: "Cancel subscription", acct_cancel_confirm: "Are you sure you want to cancel? You'll keep access until the end of the period you've paid for.",
+  acct_canceled_note: "Subscription canceled. You keep access until {date}.",
+  acct_cancel_ok: "Your subscription has been canceled. You keep access until the end of the period.",
+  acct_see_plans: "See plans",
 };
 
 /** Devuelve los textos de UI para un idioma (fallback a inglés). */

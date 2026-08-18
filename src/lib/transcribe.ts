@@ -43,8 +43,43 @@ export async function extraerPreview(filePath: string, seconds: number): Promise
   return { path: out, tmp: dir };
 }
 
-/** Descarga el audio de una URL (YouTube, etc.) con yt-dlp. Devuelve la ruta y su carpeta temporal (para borrarla). */
+/** Clasifica una URL por plataforma (para decidir la vía de descarga o el modo manual). */
+export function plataformaDeUrl(url: string): "youtube" | "instagram" | "tiktok" | "otra" {
+  try {
+    const h = new URL(url).hostname.replace(/^www\./, "").toLowerCase();
+    if (h === "youtu.be" || h.endsWith("youtube.com")) return "youtube";
+    if (h.endsWith("instagram.com")) return "instagram";
+    if (h.endsWith("tiktok.com")) return "tiktok";
+  } catch { /* URL rara */ }
+  return "otra";
+}
+
+/** Descarga un TikTok vía la API pública de tikwm (funciona desde datacenter). */
+async function descargarTikTok(url: string): Promise<{ path: string; tmp: string }> {
+  const r = await fetch(`https://www.tikwm.com/api/?url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(20000) });
+  const j = await r.json().catch(() => null) as any;
+  const media: string | undefined = j?.data?.play || j?.data?.music;
+  if (j?.code !== 0 || !media) throw new Error("No se pudo obtener el vídeo de TikTok.");
+  const dir = await mkdtemp(join(tmpdir(), "v2t-tk-"));
+  const out = join(dir, "tiktok.mp4");
+  const res = await fetch(media, { signal: AbortSignal.timeout(120000) });
+  if (!res.ok || !res.body) { await rm(dir, { recursive: true, force: true }).catch(() => {}); throw new Error("No se pudo descargar el TikTok."); }
+  const buf = Buffer.from(await res.arrayBuffer());
+  if (buf.length < 1000) { await rm(dir, { recursive: true, force: true }).catch(() => {}); throw new Error("Descarga de TikTok vacía."); }
+  const { writeFile } = await import("node:fs/promises");
+  await writeFile(out, buf);
+  return { path: out, tmp: dir };
+}
+
+/** Descarga el audio de una URL. TikTok → tikwm; el resto → yt-dlp. Devuelve ruta + carpeta temporal. */
 export async function descargarDeUrl(url: string): Promise<{ path: string; tmp: string }> {
+  if (plataformaDeUrl(url) === "tiktok") {
+    try { return await descargarTikTok(url); } catch { /* cae a yt-dlp por si tikwm falla */ }
+  }
+  return descargarConYtdlp(url);
+}
+
+async function descargarConYtdlp(url: string): Promise<{ path: string; tmp: string }> {
   const ytdlp = process.env.YTDLP_BIN;
   if (!ytdlp) throw new Error("Falta configurar YTDLP_BIN para transcribir desde URL.");
   if (!/^https?:\/\//i.test(url)) throw new Error("URL no válida.");
