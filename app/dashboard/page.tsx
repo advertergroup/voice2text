@@ -5,8 +5,7 @@ import { getCurrentUser } from "../../src/auth/session.ts";
 import { getPrisma } from "../../src/db/client.ts";
 import { AppShell } from "../../src/ui/AppShell.tsx";
 import { Uploader } from "../../src/ui/Uploader.tsx";
-import { QuotaBanner } from "../../src/ui/QuotaBanner.tsx";
-import { formatPrice, isLocale, DEFAULT_LOCALE, LANG_COOKIE } from "../../src/lib/locale.ts";
+import { isLocale, DEFAULT_LOCALE, LANG_COOKIE } from "../../src/lib/locale.ts";
 import { ui } from "../../src/lib/ui.ts";
 import { esPagado, quotaAgotada } from "../../src/lib/funnel.ts";
 
@@ -35,22 +34,21 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
   const errMsg = sp.error ? ERRORES[sp.error] : null;
 
-  // Cuota gratuita: sin plan y ya usó su transcripción → CTA al plan en vez del uploader.
+  // Cuota gratuita: sin plan y ya usó su transcripción → el uploader abre el aviso del plan al intentar otra.
   const quota = !esPagado(user) && await quotaAgotada(user.id, null);
   const cookieLang = (await cookies()).get(LANG_COOKIE)?.value;
   const locale = isLocale(cookieLang) ? cookieLang! : DEFAULT_LOCALE;
   const s = ui(locale);
-  const todayLabel = formatPrice(Number(process.env.TRIPWIRE_CENTS || 99), "USD");
-  const plan = quota ? (await prisma.plan.findFirst({ where: { key: "premium", locale } }) ?? await prisma.plan.findFirst({ where: { key: "premium", locale: "es" } })) : null;
+  const quotaTexts = { title: s.quota_title!, desc: s.quota_desc!, cta: s.quota_cta!, later: s.quota_later! };
 
   return (
     <AppShell brand={t(c, "brand.name")} email={user.email} role={user.role} active="dash">
       <h1 style={{ fontSize: 26, marginTop: 0 }}>Nueva transcripción</h1>
       {errMsg && <div className="err" style={{ marginBottom: 16 }}>⚠️ {errMsg}{sp.error === "toobig" && sp.max ? ` (máximo ${sp.max} MB)` : ""}</div>}
       <div style={{ marginBottom: 30 }}>
-        {quota
-          ? <QuotaBanner s={s} todayLabel={todayLabel} features={(plan?.caracteristicas as string[]) || []} />
-          : <div className="card" style={{ padding: 24 }}><Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} /></div>}
+        <div className="card" style={{ padding: 24 }}>
+          <Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} quotaLocked={quota} quotaTexts={quotaTexts} />
+        </div>
       </div>
 
       <h2 style={{ fontSize: 20 }}>Mis transcripciones</h2>

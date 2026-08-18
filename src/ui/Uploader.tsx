@@ -5,16 +5,24 @@ import { useState, useRef } from "react";
 const FULL_MAX_BYTES = 200 * 1024 * 1024;   // 200 MB
 const PREVIEW_CHUNK_BYTES = 20 * 1024 * 1024; // 20 MB (suficiente para la preview del inicio)
 
-export function Uploader({ dropzoneText, selectText }: { dropzoneText: string; selectText: string }) {
+export interface QuotaModalTexts { title: string; desc: string; cta: string; later: string }
+
+export function Uploader({ dropzoneText, selectText, quotaLocked = false, quotaTexts }: {
+  dropzoneText: string; selectText: string; quotaLocked?: boolean; quotaTexts?: QuotaModalTexts;
+}) {
   const [file, setFile] = useState<File | null>(null);
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [showQuota, setShowQuota] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const urlRef = useRef<HTMLInputElement>(null);
 
+  // Cuota agotada → cualquier intento de transcribir abre el aviso del plan.
+  const gate = (): boolean => { if (quotaLocked) { setShowQuota(true); return true; } return false; };
+
   async function enviar(f: File | null) {
-    if (busy) return;
+    if (busy || gate()) return;
     const url = urlRef.current?.value?.trim() || "";
     if (!f && !url) { setErr(""); return; }
     setBusy(true); setErr("");
@@ -48,8 +56,8 @@ export function Uploader({ dropzoneText, selectText }: { dropzoneText: string; s
         className={"dropzone" + (drag ? " drag" : "")}
         onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
         onDragLeave={() => setDrag(false)}
-        onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files?.[0]; if (f) { setFile(f); enviar(f); } }}
-        onClick={() => !busy && inputRef.current?.click()}
+        onDrop={(e) => { e.preventDefault(); setDrag(false); if (gate()) return; const f = e.dataTransfer.files?.[0]; if (f) { setFile(f); enviar(f); } }}
+        onClick={() => { if (gate()) return; if (!busy) inputRef.current?.click(); }}
         style={{ cursor: busy ? "default" : "pointer" }}
       >
         <div className="ico">{busy ? "⏳" : file ? "🎧" : "📤"}</div>
@@ -66,6 +74,23 @@ export function Uploader({ dropzoneText, selectText }: { dropzoneText: string; s
         <input ref={urlRef} type="url" placeholder="https://..." style={{ flex: 1, minWidth: 240 }} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); enviar(null); } }} />
         <button className="btn btn-primary" disabled={busy} onClick={() => enviar(null)} style={{ whiteSpace: "nowrap" }}>{busy ? "Procesando…" : "Transcribir"}</button>
       </div>
+
+      {/* Aviso de cuota: la prueba incluye una transcripción → activar el plan */}
+      {showQuota && quotaTexts && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(15,23,42,.55)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+             onClick={() => setShowQuota(false)}>
+          <div style={{ maxWidth: 430, width: "100%", background: "#fff", borderRadius: 18, boxShadow: "0 24px 60px rgba(2,6,23,.35)", padding: 30, textAlign: "center" }}
+               onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 36 }}>🚀</div>
+            <h2 style={{ margin: "12px 0 8px", fontSize: 21, lineHeight: 1.3 }}>{quotaTexts.title}</h2>
+            <p style={{ color: "#475569", fontSize: 15, lineHeight: 1.6 }}>{quotaTexts.desc}</p>
+            <a href="/pay" className="btn btn-primary btn-lg" style={{ width: "100%", marginTop: 16, display: "block" }}>{quotaTexts.cta}</a>
+            <button onClick={() => setShowQuota(false)} style={{ marginTop: 14, background: "none", border: 0, color: "#94a3b8", fontSize: 14, cursor: "pointer", textDecoration: "underline" }}>
+              {quotaTexts.later}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

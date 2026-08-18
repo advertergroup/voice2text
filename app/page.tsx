@@ -1,11 +1,9 @@
 import { cookies } from "next/headers";
 import { loadContent, t, getLocale } from "../src/lib/content.ts";
 import { getCurrentUser } from "../src/auth/session.ts";
-import { getPrisma } from "../src/db/client.ts";
 import { Nav, Footer } from "../src/ui/site.tsx";
 import { Uploader } from "../src/ui/Uploader.tsx";
-import { QuotaBanner } from "../src/ui/QuotaBanner.tsx";
-import { localePath, formatPrice } from "../src/lib/locale.ts";
+import { localePath } from "../src/lib/locale.ts";
 import { ui } from "../src/lib/ui.ts";
 import { ANON_COOKIE, esPagado, quotaAgotada } from "../src/lib/funnel.ts";
 
@@ -27,18 +25,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   const reg = user ? "/dashboard" : localePath(locale, "/register");
   const uperr = sp.uperr && sp.uperr !== "quota" ? (UPERR[sp.uperr] || "No se pudo procesar la subida.") : null;
 
-  // Cuota gratuita: si ya usó su transcripción gratis y no está pagado → CTA al plan en vez del uploader.
+  // Cuota gratuita: si ya usó su transcripción gratis, el uploader abre el aviso del plan al intentar otra.
   const anon = (await cookies()).get(ANON_COOKIE)?.value ?? null;
   const quota = !esPagado(user) && await quotaAgotada(user?.id ?? null, anon);
   const s = ui(locale);
-  const todayLabel = formatPrice(Number(process.env.TRIPWIRE_CENTS || 99), "USD");
-  let features: string[] = [];
-  if (quota) {
-    const prisma = await getPrisma();
-    const plan = await prisma.plan.findFirst({ where: { key: "premium", locale } })
-      ?? await prisma.plan.findFirst({ where: { key: "premium", locale: "es" } });
-    features = (plan?.caracteristicas as string[]) || [];
-  }
+  const quotaTexts = { title: s.quota_title!, desc: s.quota_desc!, cta: s.quota_cta!, later: s.quota_later! };
 
   const feat = [
     ["⚡", "feat.f1"], ["🌍", "feat.f2"], ["📄", "feat.f3"], ["🔒", "feat.f4"],
@@ -57,11 +48,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
           <p className="sub">{t(c, "hero.subtitle")}</p>
           {uperr && <div className="err" style={{ maxWidth: 560, margin: "0 auto 16px" }}>⚠️ {uperr}</div>}
           <div style={{ maxWidth: 660, margin: "0 auto", textAlign: "left" }}>
-            {quota
-              ? <QuotaBanner s={s} todayLabel={todayLabel} features={features} />
-              : <Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} />}
+            <Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} quotaLocked={quota} quotaTexts={quotaTexts} />
           </div>
-          {!quota && <div className="badges" style={{ marginTop: 16, justifyContent: "center", display: "flex" }}><span>{t(c, "hero.formats")}</span></div>}
+          <div className="badges" style={{ marginTop: 16, justifyContent: "center", display: "flex" }}><span>{t(c, "hero.formats")}</span></div>
         </div>
       </div>
 
