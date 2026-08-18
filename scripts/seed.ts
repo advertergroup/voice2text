@@ -4,6 +4,12 @@ import { DEFAULT_CONTENT } from "../src/lib/content.ts";
 import { TRANSLATIONS, I18N_PLANS, I18N_FAQS, I18N_LANDINGS } from "../src/lib/translations.generated.ts";
 import { LEGAL_TRANSLATIONS } from "../src/lib/translations.legal.ts";
 import { LOCALE_CODES, DEFAULT_LOCALE } from "../src/lib/locale.ts";
+import { ui } from "../src/lib/ui.ts";
+
+// Textos de checkout (versión normal): se siembran por idioma desde ui.ts. Los .ads quedan vacíos (= usar normal).
+const CHECKOUT_MAP: Record<string, string> = {
+  "checkout.subtitle": "pay_desc", "checkout.button": "cta", "checkout.legal": "legal_pre", "checkout.secure": "pay_secure",
+};
 
 // Claves legales/empresa: se sincronizan SIEMPRE desde el código (contenido versionado, no editable en admin).
 const FORCE_KEYS = new Set([
@@ -34,7 +40,8 @@ for (const locale of LOCALE_CODES) {
   const tr = locale === DEFAULT_LOCALE ? {} : (TRANSLATIONS[locale] || {});
   const lg = locale === DEFAULT_LOCALE ? {} : (LEGAL_TRANSLATIONS[locale] || {});
   for (const c of DEFAULT_CONTENT) {
-    const value = locale === DEFAULT_LOCALE ? c.value : (lg[c.key] ?? tr[c.key] ?? c.value);
+    let value = locale === DEFAULT_LOCALE ? c.value : (lg[c.key] ?? tr[c.key] ?? c.value);
+    if (CHECKOUT_MAP[c.key]) value = ui(locale)[CHECKOUT_MAP[c.key]] ?? c.value; // checkout normal → ui.ts por idioma
     const meta = { label: c.label, grupo: c.grupo, orden: c.orden ?? 0, multiline: !!c.multiline };
     await p.siteContent.upsert({
       where: { key_locale: { key: c.key, locale } },

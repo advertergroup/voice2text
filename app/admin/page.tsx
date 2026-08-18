@@ -27,7 +27,10 @@ export default async function Admin({ searchParams }: { searchParams: Promise<Re
       <AdminTabs active="textos" lang={lang} />
       <AdminLangBar base="/admin" lang={lang} />
       {sp.saved && <div className="ok">✓ Cambios guardados en {localeInfo(lang).native}.</div>}
-      <p className="muted" style={{ fontSize: 14 }}>Editando los textos en <b>{localeInfo(lang).flag} {localeInfo(lang).native}</b>. Cambia de idioma con los botones de arriba. Usa <code>{"{brand}"}</code> para el nombre de la marca (se sustituye solo).</p>
+      <p className="muted" style={{ fontSize: 14 }}>Editando los textos en <b>{localeInfo(lang).flag} {localeInfo(lang).native}</b>. Cambia de idioma con los botones de arriba. Usa <code>{"{brand}"}</code> para la marca (se sustituye solo).</p>
+      <p className="muted" style={{ fontSize: 13, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 8, padding: "10px 12px" }}>
+        💳 <b>Checkout:</b> el grupo «Checkout» es el de tráfico normal; «Checkout · Google Ads» se muestra solo a quien llega desde Google Ads (si lo dejas vacío, usa el normal). En estos textos puedes usar <code>{"{today}"}</code> ($0.99), <code>{"{price}"}</code> ($49.90) y <code>{"{n}"}</code> (días de prueba). Puedes <b>dejar vacío</b> cualquier texto para ocultarlo — bajo tu responsabilidad (los textos legales son recomendables por cumplimiento).
+      </p>
 
       <form action="/api/admin/content" method="post">
         <input type="hidden" name="__locale" value={lang} />

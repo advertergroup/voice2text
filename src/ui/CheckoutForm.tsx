@@ -8,8 +8,10 @@ const f = (str: string, vars: Record<string, string>) => Object.keys(vars).reduc
 export function CheckoutForm(props: {
   clientSecret: string; pk: string; todayLabel: string; monthlyLabel: string; trialDays: number;
   transcriptionId: string; prefillEmail: string; s: UIStrings;
+  textos: { subtitle: string; button: string; legal: string; secure: string };
 }) {
-  const { clientSecret, pk, todayLabel, monthlyLabel, trialDays, transcriptionId, prefillEmail, s } = props;
+  const { clientSecret, pk, todayLabel, monthlyLabel, trialDays, transcriptionId, prefillEmail, s, textos } = props;
+  const vars = { today: todayLabel, price: monthlyLabel, n: String(trialDays) };
   const [email, setEmail] = useState(prefillEmail || "");
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -67,7 +69,7 @@ export function CheckoutForm(props: {
           <div style={{ fontWeight: 700, fontSize: 16 }}>{s.pay_today}</div>
           <div style={{ fontWeight: 800, fontSize: 30, color: B }}>{todayLabel}</div>
         </div>
-        <p style={{ color: "#475569", fontSize: 13.5, margin: "6px 0 0" }}>{f(s.pay_desc!, { n: String(trialDays), price: monthlyLabel })}</p>
+        {textos.subtitle && <p style={{ color: "#475569", fontSize: 13.5, margin: "6px 0 0" }}>{f(textos.subtitle, vars)}</p>}
         <hr style={{ border: 0, borderTop: "1px solid #eef1f5", margin: "18px 0" }} />
 
         <form onSubmit={pay}>
@@ -81,14 +83,16 @@ export function CheckoutForm(props: {
 
           <button type="submit" disabled={!ready || busy}
             style={{ width: "100%", marginTop: 18, padding: "15px 18px", border: 0, borderRadius: 12, background: busy ? "#94a3b8" : "linear-gradient(135deg,#4f46e5,#7c3aed)", color: "#fff", fontWeight: 800, fontSize: 16, cursor: busy ? "default" : "pointer", boxShadow: "0 10px 24px rgba(79,70,229,.28)" }}>
-            {busy ? s.processing : f(s.cta!, { today: todayLabel })}
+            {busy ? s.processing : f(textos.button || s.cta!, vars)}
           </button>
         </form>
 
-        <p style={{ textAlign: "center", color: "#94a3b8", fontSize: 12, marginTop: 14 }}>
-          {s.legal_pre} <a href="/terms" target="_blank" style={{ color: "#64748b" }}>{s.legal_terms}</a>, <a href="/refund" target="_blank" style={{ color: "#64748b" }}>{s.legal_sub}</a> · <a href="/privacy" target="_blank" style={{ color: "#64748b" }}>{s.legal_privacy}</a>
-        </p>
-        <p style={{ textAlign: "center", color: "#94a3b8", fontSize: 12, marginTop: 6 }}>🔒 {s.pay_secure}</p>
+        {textos.legal !== "" && (
+          <p style={{ textAlign: "center", color: "#94a3b8", fontSize: 12, marginTop: 14 }}>
+            {f(textos.legal, vars)} <a href="/terms" target="_blank" style={{ color: "#64748b" }}>{s.legal_terms}</a>, <a href="/refund" target="_blank" style={{ color: "#64748b" }}>{s.legal_sub}</a> · <a href="/privacy" target="_blank" style={{ color: "#64748b" }}>{s.legal_privacy}</a>
+          </p>
+        )}
+        {textos.secure && <p style={{ textAlign: "center", color: "#94a3b8", fontSize: 12, marginTop: 6 }}>🔒 {f(textos.secure, vars)}</p>}
       </div>
     </div>
   );

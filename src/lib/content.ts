@@ -107,6 +107,18 @@ export const DEFAULT_CONTENT: ContentDef[] = [
 
   // ---- Selector de idioma ----
   { key: "lang.label", grupo: "General", label: "Selector de idioma · etiqueta", value: "Idioma", orden: 1 },
+
+  // ---- Checkout (tráfico normal) ---- placeholders: {today} {price} {n}
+  { key: "checkout.subtitle", grupo: "Checkout", label: "Subtítulo bajo «A pagar hoy» · {n} {price} {today}", value: "{n} días de acceso completo. Después {price}/mes. Cancela cuando quieras.", multiline: true, orden: 1 },
+  { key: "checkout.button", grupo: "Checkout", label: "Botón de pago · {today}", value: "Desbloquear ahora — {today}", orden: 2 },
+  { key: "checkout.legal", grupo: "Checkout", label: "Texto legal antes de los enlaces (vacío = se oculta)", value: "Al continuar aceptas nuestros", multiline: true, orden: 3 },
+  { key: "checkout.secure", grupo: "Checkout", label: "Nota de pago seguro (vacío = se oculta)", value: "Pago seguro con Stripe.", orden: 4 },
+
+  // ---- Checkout · Google Ads (si está vacío, usa el normal) ----
+  { key: "checkout.subtitle.ads", grupo: "Checkout · Google Ads", label: "Subtítulo (Google Ads) · vacío = usa el normal", value: "", multiline: true, orden: 1 },
+  { key: "checkout.button.ads", grupo: "Checkout · Google Ads", label: "Botón (Google Ads) · vacío = usa el normal", value: "", orden: 2 },
+  { key: "checkout.legal.ads", grupo: "Checkout · Google Ads", label: "Texto legal (Google Ads) · vacío = usa el normal", value: "", multiline: true, orden: 3 },
+  { key: "checkout.secure.ads", grupo: "Checkout · Google Ads", label: "Nota pago seguro (Google Ads) · vacío = usa el normal", value: "", orden: 4 },
 ];
 
 /**

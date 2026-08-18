@@ -11,9 +11,14 @@ const NO_I18N = ["/dashboard", "/account", "/admin", "/pay"];
 export function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
 
-  // Área privada → no tocar (pero deja pasar).
+  // ¿Tráfico de Google Ads? (gclid/gad_source o ?src=ads) → marca cookie para la versión "ads" del checkout.
+  const sp = req.nextUrl.searchParams;
+  const isAds = sp.has("gclid") || sp.has("gad_source") || sp.get("src") === "ads";
+  const withAds = (res: NextResponse) => { if (isAds) res.cookies.set("v2t_src", "ads", { path: "/", maxAge: 60 * 60 * 24 * 30 }); return res; };
+
+  // Área privada / checkout → no tocar (pero deja pasar, marcando ads si procede).
   if (NO_I18N.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
-    return NextResponse.next();
+    return withAds(NextResponse.next());
   }
 
   const { locale, rest } = stripLocale(pathname);
@@ -27,7 +32,7 @@ export function middleware(req: NextRequest) {
     headers.set("x-pathname", rest);
     const res = NextResponse.rewrite(url, { request: { headers } });
     res.cookies.set(LANG_COOKIE, locale, { path: "/", maxAge: 60 * 60 * 24 * 365 });
-    return res;
+    return withAds(res);
   }
 
   // Caso 2: sin prefijo → idioma por defecto (es), salvo que el usuario prefiera otro
@@ -42,14 +47,14 @@ export function middleware(req: NextRequest) {
     url.pathname = (pathname === "/" ? "" : pathname);
     url.pathname = "/" + preferred + url.pathname;
     url.search = search;
-    return NextResponse.redirect(url);
+    return withAds(NextResponse.redirect(url));
   }
 
   // Idioma base: sirve tal cual, marcando x-locale=es.
   const headers = new Headers(req.headers);
   headers.set("x-locale", DEFAULT_LOCALE);
   headers.set("x-pathname", pathname);
-  return NextResponse.next({ request: { headers } });
+  return withAds(NextResponse.next({ request: { headers } }));
 }
 
 export const config = {

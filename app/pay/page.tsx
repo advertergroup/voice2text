@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { getPrisma } from "../../src/db/client.ts";
 import { getCurrentUser } from "../../src/auth/session.ts";
+import { loadContent } from "../../src/lib/content.ts";
 import { tieneStripe, getStripe } from "../../src/lib/stripe.ts";
 import { ANON_COOKIE } from "../../src/lib/funnel.ts";
 import { formatPrice, isLocale, DEFAULT_LOCALE, LANG_COOKIE } from "../../src/lib/locale.ts";
@@ -35,6 +36,20 @@ export default async function Pay({ searchParams }: { searchParams: Promise<Reco
   const monthlyLabel = plan ? formatPrice(plan.precioCent, plan.moneda) : "$49.90";
   const todayLabel = formatPrice(TRIPWIRE_CENTS, "USD");
 
+  // Textos del checkout editables (versión normal o Google Ads según la cookie v2t_src).
+  const cont = await loadContent(locale);
+  const isAds = jar.get("v2t_src")?.value === "ads";
+  const pick = (base: string) => {
+    if (isAds) { const a = cont[`${base}.ads`]; if (a !== undefined && a !== "") return a; }
+    return cont[base] ?? "";
+  };
+  const textos = {
+    subtitle: pick("checkout.subtitle"),
+    button: pick("checkout.button"),
+    legal: pick("checkout.legal"),
+    secure: pick("checkout.secure"),
+  };
+
   // PaymentIntent del cargo de hoy (guarda la tarjeta para la suscripción posterior).
   const stripe = await getStripe();
   const pi = await stripe.paymentIntents.create({
@@ -54,6 +69,7 @@ export default async function Pay({ searchParams }: { searchParams: Promise<Reco
       transcriptionId={tr?.id || ""}
       prefillEmail={user?.email || ""}
       s={ui(locale)}
+      textos={textos}
     />
   );
 }
