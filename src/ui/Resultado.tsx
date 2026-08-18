@@ -15,7 +15,7 @@ const f = (str: string, vars: Record<string, string>) => Object.keys(vars).reduc
 function Sidebar({ ctaHref, s }: { ctaHref: string; s: UIStrings }) {
   const secciones: { titulo: string; items: [string, string][] }[] = [
     { titulo: s.sec_edit!, items: [["🔎", s.it_search!], ["💾", s.it_save!]] },
-    { titulo: s.sec_export!, items: [["📄", s.it_pdf!], ["📝", s.it_docx!], ["🗒️", s.it_txt!], ["🎬", s.it_srt!]] },
+    { titulo: s.sec_export!, items: [["📄", s.it_pdf!], ["📝", s.it_docx!], ["🗒️", s.it_txt!], ["🎬", s.it_srt!], ["📊", s.it_txt!.replace("TXT", "CSV")]] },
     { titulo: s.sec_more!, items: [["🕒", s.it_ts!], ["🌐", s.it_translate!], ["🔗", s.it_share!], ["⬇️", s.it_audio!], ["✏️", s.it_rename!], ["📁", s.it_move!], ["🗑️", s.it_delete!]] },
   ];
   return (

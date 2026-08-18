@@ -27,7 +27,7 @@ export function Editor({ id, initial }: { id: string; initial: string }) {
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <button className="btn btn-ghost" style={{ fontSize: 14, padding: "9px 16px" }} onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>{copied ? "¡Copiado!" : "Copiar"}</button>
           <span className="muted" style={{ fontSize: 13 }}>Descargar:</span>
-          {dl("txt")}{dl("srt")}{dl("docx")}{dl("pdf")}
+          {dl("txt")}{dl("srt")}{dl("docx")}{dl("pdf")}{dl("csv")}
         </div>
       </div>
       <textarea value={text} onChange={(e) => onChange(e.target.value)} style={{ minHeight: 420, fontSize: 15, lineHeight: 1.7, resize: "vertical" }} />

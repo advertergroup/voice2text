@@ -1,6 +1,6 @@
 import { getPrisma } from "../../../../../src/db/client.ts";
 import { getCurrentUser } from "../../../../../src/auth/session.ts";
-import { toTxt, toSrt, toDocx, toPdf, EXPORTS } from "../../../../../src/lib/export.ts";
+import { toTxt, toSrt, toDocx, toPdf, toCsv, EXPORTS } from "../../../../../src/lib/export.ts";
 
 export const runtime = "nodejs";
 
@@ -21,6 +21,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   let body: Buffer;
   if (fmt === "txt") body = toTxt(tr.texto);
   else if (fmt === "srt") body = toSrt(segs);
+  else if (fmt === "csv") body = toCsv(tr.texto, segs);
   else if (fmt === "docx") body = await toDocx(tr.titulo, tr.texto);
   else body = toPdf(tr.titulo, tr.texto);
 

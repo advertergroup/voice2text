@@ -18,6 +18,25 @@ export function toSrt(segments: Segmento[]): Buffer {
   return Buffer.from(body, "utf8");
 }
 
+/** CSV (con BOM para Excel): columnas start,end,text si hay segmentos; si no, una fila por párrafo. */
+export function toCsv(text: string, segments: Segmento[]): Buffer {
+  const q = (s: string) => `"${String(s).replace(/"/g, '""')}"`;
+  const ts = (s: number) => {
+    const tot = Math.floor(s);
+    const hh = String(Math.floor(tot / 3600)).padStart(2, "0");
+    const mm = String(Math.floor((tot % 3600) / 60)).padStart(2, "0");
+    const ss = String(tot % 60).padStart(2, "0");
+    return `${hh}:${mm}:${ss}`;
+  };
+  let body: string;
+  if (segments.length > 0) {
+    body = "start,end,text\r\n" + segments.map((s) => `${ts(s.start)},${ts(s.end)},${q(s.text.trim())}`).join("\r\n");
+  } else {
+    body = "text\r\n" + text.split(/\n+/).map((l) => q(l.trim())).filter((l) => l !== '""').join("\r\n");
+  }
+  return Buffer.from("﻿" + body, "utf8"); // BOM → Excel abre UTF-8 con acentos bien
+}
+
 /** DOCX vía la librería `docx`. */
 export async function toDocx(title: string, text: string): Promise<Buffer> {
   const paras = [
@@ -85,4 +104,5 @@ export const EXPORTS: Record<string, { mime: string; ext: string }> = {
   srt: { mime: "application/x-subrip; charset=utf-8", ext: "srt" },
   docx: { mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ext: "docx" },
   pdf: { mime: "application/pdf", ext: "pdf" },
+  csv: { mime: "text/csv; charset=utf-8", ext: "csv" },
 };
