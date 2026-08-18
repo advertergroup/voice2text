@@ -34,7 +34,7 @@ export function toCsv(text: string, segments: Segmento[]): Buffer {
   } else {
     body = "text\r\n" + text.split(/\n+/).map((l) => q(l.trim())).filter((l) => l !== '""').join("\r\n");
   }
-  return Buffer.from("﻿" + body, "utf8"); // BOM → Excel abre UTF-8 con acentos bien
+  return Buffer.from(String.fromCharCode(0xFEFF) + body, "utf8"); // BOM: Excel abre UTF-8 con acentos bien
 }
 
 /** DOCX vía la librería `docx`. */
