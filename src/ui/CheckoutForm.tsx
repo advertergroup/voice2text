@@ -87,10 +87,8 @@ export function CheckoutForm(props: {
           </button>
         </form>
 
-        {textos.legal !== "" && (
-          <p style={{ textAlign: "center", color: "#94a3b8", fontSize: 12, marginTop: 14 }}>
-            {f(textos.legal, vars)} <a href="/terms" target="_blank" style={{ color: "#64748b" }}>{s.legal_terms}</a>, <a href="/refund" target="_blank" style={{ color: "#64748b" }}>{s.legal_sub}</a> · <a href="/privacy" target="_blank" style={{ color: "#64748b" }}>{s.legal_privacy}</a>
-          </p>
+        {textos.legal && (
+          <p style={{ textAlign: "center", color: "#94a3b8", fontSize: 12, marginTop: 14 }} dangerouslySetInnerHTML={{ __html: f(textos.legal, vars) }} />
         )}
         {textos.secure && <p style={{ textAlign: "center", color: "#94a3b8", fontSize: 12, marginTop: 6 }}>🔒 {f(textos.secure, vars)}</p>}
       </div>

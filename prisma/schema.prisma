@@ -77,6 +77,7 @@ model Transcription {
   fileKey     String?     // archivo guardado (para transcribir el resto al pagar)
   fileExpiresAt DateTime? // cuándo se borra el archivo si no paga
   fileDeleted Boolean     @default(false)
+  partial     Boolean     @default(false) // solo se subió el inicio (archivo grande) → resubir completo tras pagar
   recoveryStage Int       @default(0)             // emails de recuperación enviados (fase 2)
   error       String?
   createdAt   DateTime    @default(now())

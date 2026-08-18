@@ -1,5 +1,6 @@
 import { Editor } from "./Editor.tsx";
 import { ProgressBar } from "./ProgressBar.tsx";
+import { ReuploadForm } from "./ReuploadForm.tsx";
 import type { UIStrings } from "../lib/ui.ts";
 
 export interface TrView {
@@ -54,12 +55,12 @@ export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel = "",
       {procesando && <ProgressBar id={tr.id} title={s.proc_title!} sub={s.proc_sub!} />}
       {tr.status === "ERROR" && <div className="err">{tr.error || s.err}</div>}
 
-      {tr.status === "DONE" && !tr.locked && <Editor id={tr.id} initial={tr.texto} />}
+      {tr.status === "DONE" && !tr.locked && (tr.texto ? <Editor id={tr.id} initial={tr.texto} /> : <ReuploadForm id={tr.id} s={s} />)}
 
       {tr.status === "DONE" && tr.locked && (
         <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 300 }}>
-            <div className="card" style={{ padding: 22, fontSize: 15.5, lineHeight: 1.75, whiteSpace: "pre-wrap" }}>{tr.preview}</div>
+            {tr.preview && <div className="card" style={{ padding: 22, fontSize: 15.5, lineHeight: 1.75, whiteSpace: "pre-wrap" }}>{tr.preview}</div>}
 
             <div style={{ position: "relative", marginTop: 14, minHeight: 340 }}>
               <div aria-hidden style={{ filter: "blur(6px)", userSelect: "none", pointerEvents: "none", padding: "8px 4px" }}>

@@ -8,7 +8,12 @@ import { ui } from "../src/lib/ui.ts";
 
 // Textos de checkout (versión normal): se siembran por idioma desde ui.ts. Los .ads quedan vacíos (= usar normal).
 const CHECKOUT_MAP: Record<string, string> = {
-  "checkout.subtitle": "pay_desc", "checkout.button": "cta", "checkout.legal": "legal_pre", "checkout.secure": "pay_secure",
+  "checkout.subtitle": "pay_desc", "checkout.button": "cta", "checkout.secure": "pay_secure",
+};
+// Línea legal completa (HTML con enlaces) por idioma.
+const legalHtml = (loc: string) => {
+  const u = ui(loc);
+  return `${u.legal_pre} <a href='/terms'>${u.legal_terms}</a>, <a href='/refund'>${u.legal_sub}</a> · <a href='/privacy'>${u.legal_privacy}</a>`;
 };
 
 // Claves legales/empresa: se sincronizan SIEMPRE desde el código (contenido versionado, no editable en admin).
@@ -41,7 +46,8 @@ for (const locale of LOCALE_CODES) {
   const lg = locale === DEFAULT_LOCALE ? {} : (LEGAL_TRANSLATIONS[locale] || {});
   for (const c of DEFAULT_CONTENT) {
     let value = locale === DEFAULT_LOCALE ? c.value : (lg[c.key] ?? tr[c.key] ?? c.value);
-    if (CHECKOUT_MAP[c.key]) value = ui(locale)[CHECKOUT_MAP[c.key]] ?? c.value; // checkout normal → ui.ts por idioma
+    if (c.key === "checkout.legal") value = legalHtml(locale);              // legal completo (HTML) por idioma
+    else if (CHECKOUT_MAP[c.key]) value = ui(locale)[CHECKOUT_MAP[c.key]] ?? c.value; // checkout normal → ui.ts
     const meta = { label: c.label, grupo: c.grupo, orden: c.orden ?? 0, multiline: !!c.multiline };
     await p.siteContent.upsert({
       where: { key_locale: { key: c.key, locale } },

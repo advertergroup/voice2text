@@ -36,6 +36,7 @@ export async function POST(req: Request) {
   const url = String(f.get("url") ?? "").trim();
   const mode = (String(f.get("mode") ?? "STANDARD").toUpperCase()) as "FAST" | "STANDARD" | "PRO";
   const language = String(f.get("language") ?? "auto");
+  const partial = String(f.get("partial") ?? "0") === "1"; // solo se subió el inicio (archivo grande)
   const prisma = await getPrisma();
 
   // Límite anti-abuso para subidas anónimas.
@@ -71,8 +72,8 @@ export async function POST(req: Request) {
     data: {
       userId: user?.id ?? null, anonSession: user ? null : anon,
       titulo, sourceType, sourceUrl, language, mode, status: "PROCESSING",
-      locked: !paid, previewSeg: PREVIEW_SECONDS, fileKey,
-      fileExpiresAt: paid ? null : new Date(Date.now() + FILE_RETENTION_HOURS * 3600e3),
+      locked: !paid, previewSeg: PREVIEW_SECONDS, fileKey, partial,
+      fileExpiresAt: (paid || partial) ? null : new Date(Date.now() + FILE_RETENTION_HOURS * 3600e3),
     },
   });
 
@@ -87,6 +88,19 @@ export async function POST(req: Request) {
         await copyFile(d.path, join(UPLOAD_DIR, fk)); // se conserva para transcribir el resto al pagar
         await prisma.transcription.update({ where: { id: trans.id }, data: { fileKey: fk } });
         workPath = join(UPLOAD_DIR, fk);
+      }
+      if (partial) {
+        // Solo se subió el inicio (archivo grande): preview tolerante a fallo; el completo se pide tras pagar.
+        let previewText = "";
+        try {
+          const { path: pv, tmp } = await extraerPreview(workPath!, PREVIEW_SECONDS);
+          const r = await transcribe(pv, { language, mode, originalName: titulo });
+          await rm(tmp, { recursive: true, force: true }).catch(() => {});
+          previewText = recortarPalabras(r.text, PREVIEW_WORDS);
+        } catch { /* trozo no parseable (p. ej. mp4 con índice al final) → sin preview, pero se puede pagar igual */ }
+        await prisma.transcription.update({ where: { id: trans.id }, data: { preview: previewText, locked: !paid, partial: true, status: "DONE", fileDeleted: true } });
+        if (workPath) await rm(workPath, { force: true }).catch(() => {});
+        return;
       }
       const dur = await probeDuration(workPath!);
       if (paid) {

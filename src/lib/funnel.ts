@@ -39,9 +39,14 @@ export async function cleanupExpired(): Promise<void> {
   } catch { /* silencioso */ }
 }
 
-/** Al pagar: transcribe el resto (completo) de las transcripciones bloqueadas del usuario que aún tengan archivo. */
+/** Al pagar: transcribe el resto de las transcripciones con archivo; las parciales/caducadas solo se desbloquean (resubir). */
 export async function unlockUser(userId: string): Promise<void> {
   const prisma = await getPrisma();
+  // Parciales (solo se subió el inicio) o caducadas (sin archivo): desbloquear; se pedirá el archivo completo.
+  await prisma.transcription.updateMany({
+    where: { userId, locked: true, OR: [{ partial: true }, { fileDeleted: true }] },
+    data: { locked: false },
+  }).catch(() => {});
   const pend = await prisma.transcription.findMany({
     where: { userId, locked: true, fileDeleted: false, fileKey: { not: null } }, take: 50,
   });

@@ -24,6 +24,9 @@ export const UI_ES: UIStrings = {
   email: "Email", loading_pay: "Cargando pago seguro…", processing: "Procesando…",
   legal_pre: "Al continuar aceptas nuestros", legal_terms: "Términos", legal_sub: "Suscripción y reembolsos", legal_privacy: "Privacidad",
   pay_secure: "Pago seguro con Stripe.", email_invalid: "Introduce un email válido.", pay_error: "No se pudo procesar el pago.",
+  reupload_title: "Sube tu archivo completo",
+  reupload_desc: "Tu suscripción está activa. Como el archivo era grande, súbelo de nuevo (completo) para obtener la transcripción entera.",
+  reupload_btn: "Subir archivo completo", uploading: "Subiendo y transcribiendo…",
 };
 
 export const UI_EN: UIStrings = {
@@ -47,6 +50,9 @@ export const UI_EN: UIStrings = {
   email: "Email", loading_pay: "Loading secure payment…", processing: "Processing…",
   legal_pre: "By continuing you agree to our", legal_terms: "Terms", legal_sub: "Subscription & refunds", legal_privacy: "Privacy",
   pay_secure: "Secure payment with Stripe.", email_invalid: "Enter a valid email.", pay_error: "Payment couldn't be processed.",
+  reupload_title: "Upload your full file",
+  reupload_desc: "Your subscription is active. Since the file was large, upload it again (in full) to get the complete transcription.",
+  reupload_btn: "Upload full file", uploading: "Uploading and transcribing…",
 };
 
 /** Devuelve los textos de UI para un idioma (fallback a inglés). */
