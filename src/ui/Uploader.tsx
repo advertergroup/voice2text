@@ -7,8 +7,8 @@ const PREVIEW_CHUNK_BYTES = 20 * 1024 * 1024; // 20 MB (suficiente para la previ
 
 export interface QuotaModalTexts { title: string; desc: string; cta: string; later: string }
 
-export function Uploader({ dropzoneText, selectText, quotaLocked = false, quotaTexts }: {
-  dropzoneText: string; selectText: string; quotaLocked?: boolean; quotaTexts?: QuotaModalTexts;
+export function Uploader({ dropzoneText, selectText, quotaLocked = false, quotaTexts, quotaCtaHref = "/pay" }: {
+  dropzoneText: string; selectText: string; quotaLocked?: boolean; quotaTexts?: QuotaModalTexts; quotaCtaHref?: string;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [drag, setDrag] = useState(false);
@@ -84,7 +84,7 @@ export function Uploader({ dropzoneText, selectText, quotaLocked = false, quotaT
             <div style={{ fontSize: 36 }}>🚀</div>
             <h2 style={{ margin: "12px 0 8px", fontSize: 21, lineHeight: 1.3 }}>{quotaTexts.title}</h2>
             <p style={{ color: "#475569", fontSize: 15, lineHeight: 1.6 }}>{quotaTexts.desc}</p>
-            <a href="/pay" className="btn btn-primary btn-lg" style={{ width: "100%", marginTop: 16, display: "block" }}>{quotaTexts.cta}</a>
+            <a href={quotaCtaHref} className="btn btn-primary btn-lg" style={{ width: "100%", marginTop: 16, display: "block" }}>{quotaTexts.cta}</a>
             <button onClick={() => setShowQuota(false)} style={{ marginTop: 14, background: "none", border: 0, color: "#94a3b8", fontSize: 14, cursor: "pointer", textDecoration: "underline" }}>
               {quotaTexts.later}
             </button>

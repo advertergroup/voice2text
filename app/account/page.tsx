@@ -55,6 +55,7 @@ export default async function Account({ searchParams }: { searchParams: Promise<
         )}
 
         <div style={{ marginTop: 22, display: "flex", gap: 10, flexWrap: "wrap" }}>
+          {user.subStatus === "TRIAL" && <a href="/api/account/upgrade" className="btn btn-primary">{s.acct_upgrade}</a>}
           {activa && !user.cancelAtPeriodEnd && (
             <CancelSubButton label={s.acct_cancel!} confirmText={s.acct_cancel_confirm!} />
           )}

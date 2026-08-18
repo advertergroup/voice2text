@@ -34,8 +34,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
   const errMsg = sp.error ? ERRORES[sp.error] : null;
 
-  // Cuota gratuita: sin plan y ya usó su transcripción → el uploader abre el aviso del plan al intentar otra.
-  const quota = !esPagado(user) && await quotaAgotada(user.id, null);
+  // Cuota: gratis y prueba de 7 días = 1 transcripción; ilimitadas solo con el plan mensual ACTIVO.
+  const quota = user.subStatus !== "ACTIVE" && await quotaAgotada(user.id, null);
+  const quotaCtaHref = esPagado(user) ? "/api/account/upgrade" : "/pay"; // TRIAL → pasar al mensual; gratis → checkout
   const cookieLang = (await cookies()).get(LANG_COOKIE)?.value;
   const locale = isLocale(cookieLang) ? cookieLang! : DEFAULT_LOCALE;
   const s = ui(locale);
@@ -45,9 +46,10 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     <AppShell brand={t(c, "brand.name")} email={user.email} role={user.role} active="dash">
       <h1 style={{ fontSize: 26, marginTop: 0 }}>Nueva transcripción</h1>
       {errMsg && <div className="err" style={{ marginBottom: 16 }}>⚠️ {errMsg}{sp.error === "toobig" && sp.max ? ` (máximo ${sp.max} MB)` : ""}</div>}
+      {sp.upgraded && <div className="ok" style={{ marginBottom: 16 }}>✓ {s.up_ok}</div>}
       <div style={{ marginBottom: 30 }}>
         <div className="card" style={{ padding: 24 }}>
-          <Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} quotaLocked={quota} quotaTexts={quotaTexts} />
+          <Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} quotaLocked={quota} quotaTexts={quotaTexts} quotaCtaHref={quotaCtaHref} />
         </div>
       </div>
 

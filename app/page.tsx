@@ -25,9 +25,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   const reg = user ? "/dashboard" : localePath(locale, "/register");
   const uperr = sp.uperr && sp.uperr !== "quota" ? (UPERR[sp.uperr] || "No se pudo procesar la subida.") : null;
 
-  // Cuota gratuita: si ya usó su transcripción gratis, el uploader abre el aviso del plan al intentar otra.
+  // Cuota: gratis y prueba de 7 días = 1 transcripción; ilimitadas solo con el plan mensual ACTIVO.
   const anon = (await cookies()).get(ANON_COOKIE)?.value ?? null;
-  const quota = !esPagado(user) && await quotaAgotada(user?.id ?? null, anon);
+  const quota = user?.subStatus !== "ACTIVE" && await quotaAgotada(user?.id ?? null, anon);
+  const quotaCtaHref = esPagado(user) ? "/api/account/upgrade" : "/pay";
   const s = ui(locale);
   const quotaTexts = { title: s.quota_title!, desc: s.quota_desc!, cta: s.quota_cta!, later: s.quota_later! };
 
@@ -48,7 +49,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
           <p className="sub">{t(c, "hero.subtitle")}</p>
           {uperr && <div className="err" style={{ maxWidth: 560, margin: "0 auto 16px" }}>⚠️ {uperr}</div>}
           <div style={{ maxWidth: 660, margin: "0 auto", textAlign: "left" }}>
-            <Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} quotaLocked={quota} quotaTexts={quotaTexts} />
+            <Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} quotaLocked={quota} quotaTexts={quotaTexts} quotaCtaHref={quotaCtaHref} />
           </div>
           <div className="badges" style={{ marginTop: 16, justifyContent: "center", display: "flex" }}><span>{t(c, "hero.formats")}</span></div>
         </div>

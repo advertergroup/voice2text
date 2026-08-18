@@ -40,8 +40,8 @@ export async function POST(req: Request) {
   const partial = String(f.get("partial") ?? "0") === "1"; // solo se subió el inicio (archivo grande)
   const prisma = await getPrisma();
 
-  // Cuota gratuita: 1 transcripción por visitante/cuenta; para más → activar el plan.
-  if (!esPagado(user) && await quotaAgotada(user?.id ?? null, anon)) {
+  // Cuota: 1 transcripción para visitantes y para la prueba de 7 días; ilimitadas solo con el plan mensual ACTIVO.
+  if (user?.subStatus !== "ACTIVE" && await quotaAgotada(user?.id ?? null, anon)) {
     return fail("quota");
   }
 

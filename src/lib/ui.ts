@@ -46,6 +46,8 @@ export const UI_ES: UIStrings = {
   quota_desc: "Si quieres tener transcripciones ilimitadas, activa el plan ahora.",
   quota_cta: "Activar mi plan ahora",
   quota_later: "Quizá más tarde",
+  up_ok: "¡Plan mensual activado! Ya tienes transcripciones ilimitadas.",
+  acct_upgrade: "Pasar al plan mensual (ilimitado)",
 };
 
 export const UI_EN: UIStrings = {
@@ -91,6 +93,8 @@ export const UI_EN: UIStrings = {
   quota_desc: "If you want unlimited transcriptions, activate the plan now.",
   quota_cta: "Activate my plan now",
   quota_later: "Maybe later",
+  up_ok: "Monthly plan activated! You now have unlimited transcriptions.",
+  acct_upgrade: "Switch to the monthly plan (unlimited)",
 };
 
 /** Devuelve los textos de UI para un idioma (fallback a inglés). */
