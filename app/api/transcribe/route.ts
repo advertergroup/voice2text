@@ -38,6 +38,7 @@ export async function POST(req: Request) {
   const mode = (String(f.get("mode") ?? "STANDARD").toUpperCase()) as "FAST" | "STANDARD" | "PRO";
   const language = String(f.get("language") ?? "auto");
   const partial = String(f.get("partial") ?? "0") === "1"; // solo se subió el inicio (archivo grande)
+  const esMic = String(f.get("source") ?? "") === "mic";    // grabación de micrófono (landing talk-to-text)
   const prisma = await getPrisma();
 
   // Cuota: 1 transcripción para visitantes y para la prueba de 7 días; ilimitadas solo con el plan mensual ACTIVO.
@@ -75,7 +76,8 @@ export async function POST(req: Request) {
   const trans = await prisma.transcription.create({
     data: {
       userId: user?.id ?? null, anonSession: user ? null : anon,
-      titulo, sourceType, sourceUrl, language, mode, status: esManual ? "MANUAL" : "PROCESSING",
+      titulo: esMic ? "Voice recording" : titulo,
+      sourceType: esMic ? "MIC" : sourceType, sourceUrl, language, mode, status: esManual ? "MANUAL" : "PROCESSING",
       locked: !paid, previewSeg: PREVIEW_SECONDS, fileKey, partial,
       contactEmail: user?.email ?? null,
       fileExpiresAt: (paid || partial) ? null : new Date(Date.now() + FILE_RETENTION_HOURS * 3600e3),

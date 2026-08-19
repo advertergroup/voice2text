@@ -51,6 +51,14 @@ export const UI_ES: UIStrings = {
   thanks_title: "¡Pago completado!",
   thanks_sub: "Tu transcripción se está desbloqueando. Te llevamos a ella en unos segundos…",
   thanks_btn: "Ver mi transcripción",
+  tt_h1: "Habla y conviértelo en texto",
+  tt_sub: "Pulsa el micrófono, habla, y obtén tu voz transcrita a texto en segundos. Sin instalar nada.",
+  mic_tap: "Pulsa para empezar a grabar",
+  mic_recording: "Grabando", mic_stop: "Pulsa el botón para terminar",
+  mic_again: "Grabar de nuevo", mic_start: "Iniciar transcripción",
+  mic_uploading: "Subiendo y transcribiendo…",
+  mic_denied: "No pudimos acceder al micrófono. Permite el acceso en tu navegador e inténtalo de nuevo.",
+  tt_or: "¿Ya tienes un archivo de audio o vídeo?", tt_upload: "Súbelo aquí",
 };
 
 export const UI_EN: UIStrings = {
@@ -101,6 +109,14 @@ export const UI_EN: UIStrings = {
   thanks_title: "Payment complete!",
   thanks_sub: "Your transcription is being unlocked. Taking you there in a few seconds…",
   thanks_btn: "View my transcription",
+  tt_h1: "Talk to Text — speak, and get it in writing",
+  tt_sub: "Tap the mic, start talking, and get your voice converted to text in seconds. Nothing to install.",
+  mic_tap: "Tap to start recording",
+  mic_recording: "Recording", mic_stop: "Tap the button to finish",
+  mic_again: "Record again", mic_start: "Start transcription",
+  mic_uploading: "Uploading & transcribing…",
+  mic_denied: "We couldn't access your microphone. Allow mic access in your browser and try again.",
+  tt_or: "Already have an audio or video file?", tt_upload: "Upload it here",
 };
 
 /** Devuelve los textos de UI para un idioma (fallback a inglés). */
