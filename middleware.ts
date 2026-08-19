@@ -6,7 +6,7 @@ import {
 } from "./src/lib/locale.ts";
 
 // Rutas que NO se localizan (área privada / checkout). Se sirven siempre sin prefijo.
-const NO_I18N = ["/dashboard", "/account", "/admin", "/pay"];
+const NO_I18N = ["/dashboard", "/account", "/admin", "/pay", "/thanks"];
 
 export function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;

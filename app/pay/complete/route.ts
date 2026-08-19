@@ -67,7 +67,8 @@ export async function GET(req: Request) {
   if (anonSession) await prisma.transcription.updateMany({ where: { anonSession }, data: { userId: user.id, anonSession: null } }).catch(() => {});
   await unlockUser(user.id);
 
-  const dest = transcriptionId ? `/r/${transcriptionId}` : "/dashboard?activated=1";
+  // Aterriza en /thanks (página de conversión para Google Ads) y de ahí sigue a la transcripción.
+  const dest = transcriptionId ? `/thanks?t=${encodeURIComponent(transcriptionId)}` : "/thanks";
   const res = NextResponse.redirect(new URL(dest, base), { status: 303 });
   res.cookies.set(SESSION_COOKIE, signSession(user.id), { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 30 });
   const anonCookie = (await cookies()).get(ANON_COOKIE)?.value;
