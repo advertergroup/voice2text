@@ -7,8 +7,8 @@ export interface MicTexts {
 }
 
 /** Grabador de voz (talk to text): micrófono → grabación → "iniciar transcripción" → pipeline normal. */
-export function MicRecorder({ t, quotaLocked = false, quotaTexts, quotaCtaHref = "/pay" }: {
-  t: MicTexts; quotaLocked?: boolean; quotaTexts?: QuotaModalTexts; quotaCtaHref?: string;
+export function MicRecorder({ t, quotaLocked = false, quotaTexts, quotaCtaHref = "/pay", lang = "" }: {
+  t: MicTexts; quotaLocked?: boolean; quotaTexts?: QuotaModalTexts; quotaCtaHref?: string; lang?: string;
 }) {
   const [fase, setFase] = useState<"idle" | "rec" | "done" | "up">("idle");
   const [seg, setSeg] = useState(0);
@@ -59,6 +59,7 @@ export function MicRecorder({ t, quotaLocked = false, quotaTexts, quotaCtaHref =
     const fd = new FormData();
     fd.append("file", blobRef.current, esMp4 ? "recording.m4a" : "recording.webm");
     fd.append("source", "mic");
+    if (lang) fd.append("language", lang); // el idioma de la página como pista (clips cortos confunden al auto-detect)
     try {
       const r = await fetch("/api/transcribe", { method: "POST", body: fd, redirect: "manual" });
       const loc = r.headers.get("location") || "";

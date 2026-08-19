@@ -42,7 +42,7 @@ export default async function TalkToText() {
         <div className="container">
           <h1>{s.tt_h1}</h1>
           <p className="sub">{s.tt_sub}</p>
-          <MicRecorder t={micTexts} quotaLocked={quota} quotaTexts={quotaTexts} quotaCtaHref={quotaCtaHref} />
+          <MicRecorder t={micTexts} quotaLocked={quota} quotaTexts={quotaTexts} quotaCtaHref={quotaCtaHref} lang={locale} />
           <p className="muted" style={{ marginTop: 18, fontSize: 14 }}>
             {s.tt_or} <a href={localePath(locale, "/")} style={{ color: "var(--accent)", fontWeight: 600 }}>{s.tt_upload}</a>
           </p>
