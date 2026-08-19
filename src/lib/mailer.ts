@@ -1,11 +1,32 @@
 /**
- * Envío de emails por el servidor de correo propio (mail.voicetotexts.net).
- * Env: SMTP_HOST, SMTP_PORT (587), SMTP_USER, SMTP_PASS, NOTIFY_EMAIL (avisos al admin).
- * Sin SMTP configurado, los envíos se omiten en silencio (no rompen el flujo).
+ * Envío de emails. Prioridad:
+ *  1) Resend (RESEND_API_KEY + RESEND_FROM) — mejor entregabilidad para los emails a clientes.
+ *  2) SMTP propio (mail.voicetotexts.net) — fallback y avisos internos.
+ * Sin nada configurado, los envíos se omiten en silencio (no rompen el flujo).
  */
 
 export function tieneSmtp(): boolean {
   return !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+}
+
+function tieneResend(): boolean {
+  return !!process.env.RESEND_API_KEY;
+}
+
+async function sendViaResend(to: string, subject: string, html: string): Promise<boolean> {
+  try {
+    const r = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: process.env.RESEND_FROM || "Voice2Text <support@voicetotexts.net>", to: [to], subject, html }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!r.ok) { console.warn("[mailer] resend", r.status, (await r.text()).slice(0, 200)); return false; }
+    return true;
+  } catch (e) {
+    console.warn("[mailer] resend error", e instanceof Error ? e.message : e);
+    return false;
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,6 +45,8 @@ async function getTransport() {
 }
 
 export async function sendMail(to: string, subject: string, html: string): Promise<boolean> {
+  // Resend primero (si está configurado); si falla o no está, SMTP propio.
+  if (tieneResend() && await sendViaResend(to, subject, html)) return true;
   if (!tieneSmtp()) return false;
   try {
     const tx = await getTransport();
