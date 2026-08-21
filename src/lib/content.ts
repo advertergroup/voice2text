@@ -127,6 +127,12 @@ export const DEFAULT_CONTENT: ContentDef[] = [
   { key: "exitoffer.text", grupo: "Oferta de salida", label: "Texto · {oferta} {normal} {monthly} {days}", value: "Tu transcripción ya está lista. Llévatela hoy por {oferta} en vez de {normal}. {days} días de acceso y, si no cancelas, la suscripción sigue a {monthly} al mes.", multiline: true, orden: 4 },
   { key: "exitoffer.accept", grupo: "Oferta de salida", label: "Botón de aceptar · {oferta}", value: "Sí, quiero mi transcripción por {oferta}", orden: 5 },
   { key: "exitoffer.decline", grupo: "Oferta de salida", label: "Enlace de rechazar", value: "No, gracias", orden: 6 },
+
+  // ---- Oferta de salida · Google Ads (vacío = usa la normal) ----
+  { key: "exitoffer.title.ads", grupo: "Oferta de salida · Google Ads", label: "Titular (Google Ads) · vacío = usa el normal", value: "", orden: 1 },
+  { key: "exitoffer.text.ads", grupo: "Oferta de salida · Google Ads", label: "Texto (Google Ads) · {oferta} {normal} {monthly} {days}", value: "", multiline: true, orden: 2 },
+  { key: "exitoffer.accept.ads", grupo: "Oferta de salida · Google Ads", label: "Botón aceptar (Google Ads) · vacío = usa el normal", value: "", orden: 3 },
+  { key: "exitoffer.decline.ads", grupo: "Oferta de salida · Google Ads", label: "Enlace rechazar (Google Ads) · vacío = usa el normal", value: "", orden: 4 },
 ];
 
 /**

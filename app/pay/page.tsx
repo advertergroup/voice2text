@@ -54,10 +54,10 @@ export default async function Pay({ searchParams }: { searchParams: Promise<Reco
   const eoPrice = parseInt(cont["exitoffer.price"] || "0", 10);
   const exitOffer = (cont["exitoffer.enabled"] === "1" && eoPrice > 0 && eoPrice < TRIPWIRE_CENTS) ? {
     label: formatPrice(eoPrice, "USD"),
-    title: cont["exitoffer.title"] || "",
-    text: cont["exitoffer.text"] || "",
-    accept: cont["exitoffer.accept"] || "",
-    decline: cont["exitoffer.decline"] || "",
+    title: pick("exitoffer.title"),
+    text: pick("exitoffer.text"),
+    accept: pick("exitoffer.accept"),
+    decline: pick("exitoffer.decline"),
   } : null;
 
   // PaymentIntent del cargo de hoy (guarda la tarjeta para la suscripción posterior).
