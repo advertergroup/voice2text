@@ -37,11 +37,10 @@ export function Uploader({ dropzoneText, selectText, quotaLocked = false, quotaT
       fd.append("url", url);
     }
     try {
-      const r = await fetch("/api/transcribe", { method: "POST", body: fd, redirect: "manual" });
-      const loc = r.headers.get("location") || (r.type === "opaqueredirect" ? "" : "");
-      if (loc) { window.location.href = loc; return; }
-      // Si el navegador no expone Location (opaqueredirect), recarga a la home; la ruta ya creó la transcripción.
-      if (r.type === "opaqueredirect" || r.status === 0) { window.location.reload(); return; }
+      // Sigue el redirect del servidor y navega a la URL final (en navegador real el Location es invisible).
+      const r = await fetch("/api/transcribe", { method: "POST", body: fd });
+      if (r.redirected && r.url) { window.location.href = r.url; return; }
+      if (r.ok && r.url) { window.location.href = r.url; return; }
       setErr("No se pudo subir. Inténtalo de nuevo."); setBusy(false);
     } catch {
       setErr("No se pudo subir. Revisa tu conexión e inténtalo de nuevo."); setBusy(false);

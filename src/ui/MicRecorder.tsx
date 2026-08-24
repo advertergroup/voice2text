@@ -61,10 +61,10 @@ export function MicRecorder({ t, quotaLocked = false, quotaTexts, quotaCtaHref =
     fd.append("source", "mic");
     if (lang) fd.append("language", lang); // el idioma de la página como pista (clips cortos confunden al auto-detect)
     try {
-      const r = await fetch("/api/transcribe", { method: "POST", body: fd, redirect: "manual" });
-      const loc = r.headers.get("location") || "";
-      if (loc) { window.location.href = loc; return; }
-      if (r.type === "opaqueredirect" || r.status === 0) { window.location.reload(); return; }
+      // Sigue el redirect del servidor y navega a la URL final (en navegador real el Location es invisible).
+      const r = await fetch("/api/transcribe", { method: "POST", body: fd });
+      if (r.redirected && r.url) { window.location.href = r.url; return; }
+      if (r.ok && r.url) { window.location.href = r.url; return; }
       setErr("Upload failed. Please try again."); setFase("done");
     } catch { setErr("Upload failed. Check your connection."); setFase("done"); }
   }
