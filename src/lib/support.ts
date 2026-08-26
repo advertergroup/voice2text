@@ -2,39 +2,114 @@ import { getPrisma } from "../db/client.ts";
 import { sendMail } from "./mailer.ts";
 import { tieneStripe, getStripe } from "./stripe.ts";
 import { tieneKunfupay, cancelSubscription } from "./kunfupay.ts";
+import {
+  RE_REFUND, RE_CANCEL, RE_CARGO, limpiarCitas, extraerEmails, detectarIdioma, plantillaNoEsNuestro,
+  TEXTOS_OTRO_EMAIL, type ComprobacionEmail,
+} from "./support-texto.ts";
 
 /**
  * Agente automático del buzón support@: lee el IMAP propio, detecta solicitudes de
- * cancelación/reembolso y aplica la política:
+ * cancelación/reembolso (o consultas de cobro) y aplica la política:
  *   - Reembolso con cargo < REFUND_WINDOW_HOURS (24h) → refund en Stripe + cancelación inmediata.
  *   - Reembolso > 24h → cancela la renovación (acceso hasta fin de periodo) y lo explica.
  *   - Cancelación → cancela la renovación.
- * Siempre notifica al admin (NOTIFY_EMAIL). Si no entiende el email, no toca nada y lo reenvía.
+ *   - Sin cuenta de pago (ni cuenta, o cuenta gratis, o ya cancelada) y sin cargo en Stripe →
+ *     email explicativo en su idioma: no hay cargo nuestro con ese email, que lo confirme, y lista de
+ *     plataformas con nombre parecido (la gente nos confunde con voice2texts.com). Una vez cada 48h.
+ * Siempre notifica al admin (NOTIFY_EMAIL) y deja rastro en SupportLog. Si no entiende el email, no toca nada.
  */
 
 const REFUND_WINDOW_H = Number(process.env.REFUND_WINDOW_HOURS || 24);
+const REPETIR_H = Number(process.env.SUPPORT_REPEAT_HOURS || 48);
 
-const RE_REFUND = /refund|reembols|devoluci[oó]n|devolver|money\s*back|devuelvan|charge\s*back|dinero/i;
-const RE_CANCEL = /cancel|cancelar|baja\b|darme de baja|unsubscribe|stop (my )?subscription|no quiero (pagar|seguir)|end (my )?subscription/i;
 const RE_NOREPLY = /mailer-daemon|postmaster|no-?reply|noreply|auto-?reply|bounce/i;
 
 const FOOTER = `<p style="color:#94a3b8;font-size:12px">Voice2Text · 1mmObj LLC · 1209 Mountain Road Pl NE, Ste N, Albuquerque, NM 87110, USA</p>`;
 
 interface Resultado { accion: string; detalle: string }
 
-async function procesarSolicitud(fromEmail: string, subject: string, body: string): Promise<Resultado> {
+interface UsuarioMin {
+  id: string; email: string; subStatus: string; stripeCustomerId: string | null; stripeSubscriptionId: string | null; kunfupaySubscriptionId: string | null;
+}
+
+/** Tiene (o tuvo) algo de pago con nosotros: suscripción viva o cliente Stripe conocido. */
+function tieneHistorialPago(u: UsuarioMin): boolean {
+  return ["TRIAL", "ACTIVE", "PAST_DUE"].includes(u.subStatus) || !!u.stripeSubscriptionId || !!u.kunfupaySubscriptionId || !!u.stripeCustomerId;
+}
+
+/** Cargo cobrado en Stripe para cualquier customer con ese email (por si la BD no lo refleja). */
+async function cargoStripePorEmail(email: string): Promise<{ customerId: string; chargeId: string; amount: number } | null> {
+  if (!tieneStripe()) return null;
+  const stripe = await getStripe();
+  const custs = await stripe.customers.list({ email, limit: 3 });
+  for (const c of custs.data || []) {
+    const ch = await stripe.charges.list({ customer: c.id, limit: 5 });
+    const ok = (ch.data || []).find((x: any) => x.status === "succeeded");
+    if (ok) return { customerId: c.id, chargeId: ok.id, amount: ok.amount };
+  }
+  return null;
+}
+
+async function procesarSolicitud(fromEmail: string, subject: string, bodyBruto: string): Promise<Resultado> {
+  const remitente = fromEmail.toLowerCase();
+  const body = limpiarCitas(bodyBruto);                 // sin lo citado (si no, re-procesaríamos nuestro propio email)
   const texto = `${subject}\n${body}`.slice(0, 4000);
   const pideRefund = RE_REFUND.test(texto);
   const pideCancel = RE_CANCEL.test(texto) || pideRefund;
-  if (!pideCancel) return { accion: "IGNORADO", detalle: "sin intención clara de cancelar/reembolsar" };
+  const preguntaCargo = RE_CARGO.test(texto);
+  if (!pideCancel && !preguntaCargo) return { accion: "IGNORADO", detalle: "sin intención clara de cancelar/reembolsar ni consulta de cobro" };
 
   const prisma = await getPrisma();
-  const user = await prisma.user.findUnique({ where: { email: fromEmail.toLowerCase() } });
-  if (!user) {
-    await sendMail(fromEmail, "About your request — Voice2Text",
-      `<p>We couldn't find an account under this email address.</p><p>Please write us from the email you used at voicetotexts.net, or reply with that email address.</p>${FOOTER}`);
-    return { accion: "SIN_CUENTA", detalle: "el remitente no tiene cuenta" };
+  const candidatos = extraerEmails(remitente, texto);   // remitente + emails que menciona
+  const usuarios: UsuarioMin[] = await prisma.user.findMany({
+    where: { email: { in: candidatos } },
+    select: { id: true, email: true, subStatus: true, stripeCustomerId: true, stripeSubscriptionId: true, kunfupaySubscriptionId: true },
+  });
+  const propio = usuarios.find((u) => u.email === remitente) || null;
+
+  // --- ¿Hay una cuenta de pago? Solo actuamos sobre la del REMITENTE (nadie cancela la de otro mencionando su email). ---
+  if (!propio || !tieneHistorialPago(propio)) {
+    const ajeno = usuarios.find((u) => u.email !== remitente && tieneHistorialPago(u));
+    if (ajeno) {
+      const lang = detectarIdioma(texto);
+      const t = TEXTOS_OTRO_EMAIL[lang] || TEXTOS_OTRO_EMAIL.en;
+      await sendMail(fromEmail, t.subject, `<p>${t.body.replace("{email}", `<b>${ajeno.email}</b>`)}</p>${FOOTER}`);
+      return { accion: "CUENTA_DE_OTRO_EMAIL", detalle: `la cuenta de pago está bajo ${ajeno.email}, no bajo el remitente → pedido que escriba desde ese email (seguridad)` };
+    }
+
+    // Por si hay dinero cobrado en Stripe que la BD no refleja: no se automatiza, aviso al admin.
+    for (const e of candidatos) {
+      if (usuarios.find((u) => u.email === e)?.stripeCustomerId) continue;
+      const cargo = await cargoStripePorEmail(e).catch(() => null);
+      if (cargo) return { accion: "REVISAR_PAGO_STRIPE", detalle: `Stripe tiene un cargo cobrado ($${(cargo.amount / 100).toFixed(2)}, customer ${cargo.customerId}, charge ${cargo.chargeId}) para ${e} y la BD no lo refleja — revisar a mano` };
+    }
+
+    // --- NO ES NUESTRO: ni cuenta de pago ni cargo. Explicación (en su idioma) + lista de plataformas parecidas. ---
+    const comprobaciones: ComprobacionEmail[] = candidatos.map((e) => {
+      const u = usuarios.find((x) => x.email === e);
+      if (!u) return { email: e, estado: "sin_cuenta" };
+      if (u.subStatus === "CANCELED") return { email: e, estado: "cancelada" };
+      return { email: e, estado: "cuenta_gratis" };
+    });
+    const previo = await prisma.supportLog.findFirst({
+      where: { email: remitente, accion: "NO_ES_NUESTRO", createdAt: { gte: new Date(Date.now() - REPETIR_H * 3600e3) } },
+      orderBy: { createdAt: "desc" },
+    });
+    if (previo) {
+      const h = Math.round((Date.now() - previo.createdAt.getTime()) / 3600e3);
+      return { accion: "REPETIDO", detalle: `hace ${h}h ya se le explicó que no tiene cuenta de pago ni cargo con nosotros (${candidatos.join(", ")}) — responde tú` };
+    }
+    const lang = detectarIdioma(texto);
+    const { subject: asunto, html } = plantillaNoEsNuestro(lang, comprobaciones, remitente);
+    const enviado = await sendMail(fromEmail, asunto, html + FOOTER);
+    return {
+      accion: "NO_ES_NUESTRO",
+      detalle: `sin suscripción ni cargo para ${comprobaciones.map((c) => `${c.email} (${c.estado})`).join(", ")} · idioma ${lang} → email explicativo ${enviado ? "enviado" : "NO enviado (fallo del mailer)"}`,
+    };
   }
+
+  const user = propio;
+  if (!pideCancel) return { accion: "IGNORADO", detalle: "cliente de pago pregunta por un cobro sin pedir cancelar — responde tú" };
 
   // --- Reembolso dentro de la ventana de 24h ---
   if (pideRefund && user.stripeCustomerId && tieneStripe()) {
@@ -95,29 +170,37 @@ export async function runSupport(): Promise<{ procesados: number; acciones: stri
     const uids = await client.search({ seen: false });
     for (const uid of (uids || []).slice(0, 20)) {
       const msg = await client.fetchOne(String(uid), { source: true }, { uid: true });
-      if (!msg?.source) continue;
+      if (!msg || !msg.source) continue;
       await client.messageFlagsAdd(String(uid), ["\\Seen"], { uid: true }); // marca ya (sin bucles si algo falla)
       const mail = await simpleParser(msg.source);
       const from = mail.from?.value?.[0]?.address || "";
       const subject = mail.subject || "";
-      const body = (mail.text || "").slice(0, 4000);
+      const body = (mail.text || "").slice(0, 6000);
       procesados++;
 
       // No procesar autorespuestas/bots ni correos internos.
       if (!from || RE_NOREPLY.test(from) || mail.headers.get("auto-submitted")) { acciones.push(`${from || "?"}: saltado (auto)`); continue; }
       if (from.toLowerCase().endsWith("@voicetotexts.net")) { acciones.push(`${from}: saltado (interno)`); continue; }
 
-      const r = await procesarSolicitud(from, subject, body);
+      let r: Resultado;
+      try { r = await procesarSolicitud(from, subject, body); }
+      catch (e) { r = { accion: "ERROR", detalle: e instanceof Error ? e.message : "error" }; }
       acciones.push(`${from}: ${r.accion} — ${r.detalle}`);
+
+      try {
+        const prisma = await getPrisma();
+        await prisma.supportLog.create({ data: { email: from.toLowerCase(), subject: subject.slice(0, 200), accion: r.accion, detalle: r.detalle.slice(0, 1000) } });
+      } catch (e) { console.warn("[support] log", e instanceof Error ? e.message : e); }
 
       // Notifica SIEMPRE al admin con lo hecho (o lo no entendido, para respuesta manual).
       const admin = process.env.NOTIFY_EMAIL;
       if (admin) {
+        const manual = ["IGNORADO", "REPETIDO", "REVISAR_PAGO_STRIPE", "ERROR", "ERROR_STRIPE"].includes(r.accion);
         await sendMail(admin, `🛎️ Soporte auto: ${r.accion} — ${from}`,
-          `<p><b>De:</b> ${from}<br/><b>Asunto:</b> ${subject}</p>
-           <p><b>Acción:</b> ${r.accion}<br/><b>Detalle:</b> ${r.detalle}</p>
+          `<p><b>De:</b> ${from}<br/><b>Asunto:</b> ${subject.replace(/</g, "&lt;")}</p>
+           <p><b>Acción:</b> ${r.accion}<br/><b>Detalle:</b> ${r.detalle.replace(/</g, "&lt;")}</p>
            <p><b>Mensaje original:</b></p><blockquote style="color:#475569;border-left:3px solid #e5e7eb;padding-left:12px">${body.slice(0, 1500).replace(/</g, "&lt;")}</blockquote>
-           ${r.accion === "IGNORADO" ? "<p>⚠️ No se ha hecho nada — responde tú al cliente.</p>" : ""}`);
+           ${manual ? "<p>⚠️ No se ha respondido al cliente — responde tú.</p>" : ""}`);
       }
     }
   } finally {

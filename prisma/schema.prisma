@@ -157,3 +157,15 @@ model LandingPage {
   @@unique([slug, locale])
   @@index([locale])
 }
+
+/// Rastro del agente de soporte automático (support@): qué se hizo con cada email.
+model SupportLog {
+  id        String   @id @default(cuid())
+  email     String
+  subject   String?
+  accion    String
+  detalle   String?
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+}
