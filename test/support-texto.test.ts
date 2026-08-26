@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  RE_CANCEL, RE_CARGO, RE_REFUND, limpiarCitas, extraerEmails, detectarIdioma, plantillaNoEsNuestro,
-  TEXTOS, TEXTOS_OTRO_EMAIL, PLATAFORMAS_SIMILARES, type Lang,
+  RE_CANCEL, RE_CARGO, RE_REFUND, limpiarCitas, extraerEmails, detectarIdioma, plantillaNoEsNuestro, esAsuntoNuestro, sinPrefijosAsunto, dmarcDe,
+  TEXTOS, TEXTOS_AVISO_TITULAR, PLATAFORMAS_SIMILARES, type Lang,
 } from "../src/lib/support-texto.ts";
 
 const LANGS: Lang[] = ["en", "es", "de", "fr", "it", "nl", "pl", "pt"];
@@ -40,6 +40,71 @@ test("limpiarCitas: corta en el «escribió:» de Gmail en español y conserva l
   assert.ok(limpio.startsWith("El pago se realizó al comercio VOICE2TEXT"));
   assert.ok(!limpio.includes("We couldn't find"));
   assert.ok(!limpio.includes("escribió:"));
+});
+
+test("limpiarCitas: NO corta en frases del usuario que empiezan por El/On/Le (solo en cabeceras con fecha)", () => {
+  const es = "Hola,\nEl cobro de VOICE2TEXT no lo reconozco, cancelen mi suscripción.\n\nEl dom, 23 ago 2026 a la(s) 5:05 p.m., Voice2Text (support@voicetotexts.net) escribió:\n> lo citado";
+  const esL = limpiarCitas(es);
+  assert.ok(esL.includes("cancelen mi suscripción") && !esL.includes("escribió:") && !esL.includes("lo citado"));
+  const es2 = "El cargo de $49.95 sigue apareciendo. El correo que usé es otro@gmail.com.\n\nEl mié, 26 ago 2026 a las 10:00, Voice2Text <support@voicetotexts.net> escribió:\n> lo citado";
+  const es2L = limpiarCitas(es2);
+  assert.ok(es2L.includes("otro@gmail.com") && !es2L.includes("lo citado"));
+  const en = "On my statement I see VOICE2TEXT, please cancel.\n\nOn Wed, Aug 26, 2026 at 10:00 AM Voice2Text <support@voicetotexts.net>\nwrote:\n> quoted";
+  const enL = limpiarCitas(en);
+  assert.ok(enL.includes("please cancel") && !enL.includes("wrote:") && !enL.includes("quoted"));
+  const fr = "Bonjour,\nLe prélèvement VOICE2TEXT n'est pas à moi, annulez.\n\nLe mer. 26 août 2026 à 10:00, Voice2Text <support@voicetotexts.net> a écrit :\n> cité";
+  const frL = limpiarCitas(fr);
+  assert.ok(frL.includes("annulez") && !frL.includes("a écrit") && !frL.includes("cité"));
+  const ios = "Ok thanks\n\n> On Aug 26, 2026, at 10:00 AM, Voice2Text <support@voicetotexts.net> wrote:\n> \n> body";
+  assert.equal(limpiarCitas(ios), "Ok thanks");
+  const de = "Bitte kündigen.\n\nAm Mi., 26. Aug. 2026 um 10:00 Uhr schrieb Voice2Text <support@voicetotexts.net>:\n> zitiert";
+  assert.equal(limpiarCitas(de), "Bitte kündigen.");
+});
+
+test("intención: «baja calidad» y «cuánto dinero» NO son cancelación/reembolso; las formas reales sí", () => {
+  assert.ok(!RE_CANCEL.test("La transcripción es de muy baja calidad, ¿cómo mejoro la precisión?"));
+  assert.ok(!RE_CANCEL.test("se oye la voz muy baja"));
+  assert.ok(!RE_REFUND.test("¿cuánto dinero cuesta el plan mensual?"));
+  assert.ok(RE_CANCEL.test("quiero darme de baja") && RE_CANCEL.test("Solicito la baja total") && RE_CANCEL.test("Baja inmediata de mi cuenta"));
+  assert.ok(RE_REFUND.test("devuelvan el dinero") && RE_REFUND.test("quiero mi dinero") && RE_REFUND.test("I want my money back"));
+});
+
+test("queja de cobro: las frases habituales disparan RE_CARGO; una pregunta de uso no", () => {
+  for (const s of [
+    "There is a charge from VOICE2TEXT on my credit card for $49.95 that I did not authorize.",
+    "I did not authorize this charge.", "Why are you charging me? Stop it.", "I see a charge of $49.95",
+    "Unauthorized transaction on my card", "My account was debited 49.95", "I am paying for VOICE2TEXT",
+    "Me cobraron 49,95", "Me están cobrando todos los meses", "Pagué 49,95 y no sé por qué",
+  ]) assert.ok(RE_CARGO.test(s), s);
+  assert.ok(!RE_CARGO.test("How do I export to SRT?") && !RE_CARGO.test("¿Cómo descargo el PDF?"));
+});
+
+test("asunto: las respuestas a NUESTROS emails no aportan intención (contienen «canceled», «refund»…)", () => {
+  for (const s of [
+    "Re: Your subscription has been canceled — Voice2Text", "RE: Re: About your request — Voice2Text",
+    "Fwd: Your refund has been issued — Voice2Text", "AW: Zu Ihrer Anfrage — Voice2Text", "Re: Sobre tu solicitud — Voice2Text",
+    "Re: Security notice — Voice2Text",
+  ]) assert.ok(esAsuntoNuestro(s), s);
+  for (const s of ["Cancel abo VOICE2TEXT", "CANCEL", "Re: cancel my subscription", "Voice2Text refund", "Cancelación inmediata de \"cuenta\" y baja de datos"]) assert.ok(!esAsuntoNuestro(s), s);
+  assert.equal(sinPrefijosAsunto("RE: Re: FW: hola"), "hola");
+  // Con el asunto «neutralizado», un «Awesome, thank you!» ya no es una cancelación.
+  const texto = `${esAsuntoNuestro("Re: Your subscription has been canceled — Voice2Text") ? "" : "x"}\nAwesome, thank you so much!`;
+  assert.ok(!RE_CANCEL.test(texto) && !RE_REFUND.test(texto) && !RE_CARGO.test(texto));
+});
+
+test("dmarcDe: lee X-Spamd-Result de rspamd y Authentication-Results propias; fail gana; ajenas se ignoran", () => {
+  const h = (o: Record<string, unknown>) => ({ get: (k: string) => o[k] });
+  // Gmail real (cabecera tal cual la escribe rspamd en mail.voicetotexts.net)
+  assert.equal(dmarcDe(h({ "x-spamd-result": "default: False [-4.10 / 11.00];\n\tR_SPF_ALLOW(-0.20)[+ip4:209.85.128.0/17];\n\tDMARC_POLICY_ALLOW(-0.50)[gmail.com,none];\n\tR_DKIM_ALLOW(-0.20)[gmail.com:s=20230601]" })), "pass");
+  assert.equal(dmarcDe(h({ "x-spamd-result": "default: False [3.10 / 11.00];\n\tDMARC_POLICY_SOFTFAIL(0.10)[gmail.com : No valid SPF, No valid DKIM,none]" })), "fail");
+  assert.equal(dmarcDe(h({ "x-spamd-result": "default: False [1.00 / 11.00];\n\tDMARC_NA(0.00)[smallfirm.com]" })), "none");
+  assert.equal(dmarcDe(h({})), "none");
+  // Authentication-Results propias vs ajenas (forjadas o del salto anterior)
+  assert.equal(dmarcDe(h({ "authentication-results": "mail.voicetotexts.net; dmarc=pass header.from=gmail.com" })), "pass");
+  assert.equal(dmarcDe(h({ "authentication-results": ["mx.google.com; dmarc=pass header.from=x.com", "mail.voicetotexts.net; dmarc=fail header.from=x.com"] })), "fail");
+  assert.equal(dmarcDe(h({ "authentication-results": "mx.google.com; dmarc=pass header.from=x.com" })), "none", "un pass ajeno no cuenta");
+  // Forjado pass + real fail → fail
+  assert.equal(dmarcDe(h({ "x-spamd-result": ["default: False; DMARC_POLICY_ALLOW(-0.5)[x]", "default: False; DMARC_POLICY_REJECT(2.0)[x]"] })), "fail");
 });
 
 test("limpiarCitas: cabecera Outlook y líneas «>»", () => {
@@ -95,7 +160,7 @@ test("los 8 idiomas están completos y renderizan", () => {
     for (const [k, v] of Object.entries(t)) assert.ok(typeof v === "string" && v.length > 0, `${l}.${k} vacío`);
     assert.ok(t.conclusion.includes("{email}") && t.confirm.includes("{email}"), `${l} sin placeholder`);
     assert.ok(t.sign.includes("\n"), `${l} firma sin salto`);
-    assert.ok(TEXTOS_OTRO_EMAIL[l]?.body.includes("{email}"), `${l} otro_email`);
+    assert.ok(TEXTOS_AVISO_TITULAR[l]?.body.includes("{email}"), `${l} aviso_titular`);
     const { html } = plantillaNoEsNuestro(l, [{ email: "p@q.com", estado: "sin_cuenta" }], "p@q.com");
     assert.ok(html.includes("<b>p@q.com</b>") && !html.includes("{email}") && html.includes("voice2texts.com"), `${l} render`);
   }

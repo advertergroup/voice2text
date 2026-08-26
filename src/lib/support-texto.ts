@@ -9,23 +9,29 @@
 
 export type Lang = "en" | "es" | "de" | "fr" | "it" | "nl" | "pl" | "pt";
 
-export const RE_REFUND = /refund|reembols|devoluci[oó]n|devolver|money\s*back|devuelvan|charge\s*back|dinero|rembours|rimbors|erstatt|terugbetal|zwrot/i;
-export const RE_CANCEL = /cancel|cancelar|anular|\bbaja\b|darme de baja|unsubscribe|stop (my )?subscription|no quiero (pagar|seguir)|end (my )?subscription|k[üu]ndig|r[ée]sili|annul|disdi|opzeg|anuluj|anulow/i;
-/** Consulta de cobro sin pedir explícitamente cancelar ("why was I charged?"). */
-export const RE_CARGO = /charged|charge on|charges|billed|billing|payment|cobro|cobrad|cargo\b|cargos\b|pago\b|factur|abbuch|belast|prélèv|addebit|cobran[çc]a|obci[ąa]ż/i;
+// «baja» solo en sentido de darse de baja (no «baja calidad»); «dinero» solo como «mi/el/my dinero».
+export const RE_REFUND = /refund|reembols|devoluci[oó]n|devolver|devuelv|money\s*back|(?:mi|el|my) dinero|charge\s*back|rembours|rimbors|erstatt|terugbetal|zwrot/i;
+export const RE_CANCEL = /cancel|cancelar|anular|\b(?:la|de|dar\w*|solicito|pido|quiero)\s+baja\b|\bbaja\s+(?:de|total|inmediata|definitiva)\b|unsubscribe|stop (my )?subscription|no quiero (pagar|seguir)|end (my )?subscription|k[üu]ndig|r[ée]sili|annul|disdi|opzeg|anuluj|anulow/i;
+/** Queja de cobro sin pedir explícitamente cancelar ("there is a charge from VOICE2TEXT", "me están cobrando"). */
+// OJO: sin flag `u`, `\b` no funciona tras vocales acentuadas («pagué», «cobró») → lookahead `(?![a-záéíóúñ])`.
+export const RE_CARGO = /\bcharg(?:e|es|ed|ing)\b|billed|debit|transaction|unauthori[sz]ed|\bpa(?:id|ying)\b|cobr(?:o|os|ado|an|ando|aron|ó)(?![a-záéíóúñ])|me cobr|\bcargos?\b|pagu[eé](?![a-záéíóúñ])|pagando|factur|abbuch|abgebucht|belast|pr[ée]l[eè]v|addebit|afgeschreven|pobran|obci[ąa]ż/i;
 
 /** Quita las partes citadas de una respuesta (líneas «>» y todo lo que sigue a «On … wrote:» y equivalentes). */
 export function limpiarCitas(texto: string): string {
   let t = texto.replace(/\r\n/g, "\n");
+  // Cabeceras de cita «On <fecha> … wrote:» y equivalentes: exigen un dígito (la fecha) en los primeros 40
+  // caracteres tras el marcador y como mucho UN salto de línea (Gmail parte la cabecera en dos), para no
+  // cortar en una frase del usuario que empiece por «El …»/«On …»/«Le …».
+  const F = "[^\\n]{0,40}?\\d[^\\n]*(?:\\n[^\\n]*)?";
   const cortes: RegExp[] = [
-    /\n\s*On [\s\S]{0,300}?wrote:/,                 // Gmail EN (puede partirse en 2 líneas)
-    /\n\s*El [\s\S]{0,300}?escribi[oó]:/,           // ES
-    /\n\s*Am [\s\S]{0,300}?schrieb[\s\S]{0,60}?:/,  // DE
-    /\n\s*Le [\s\S]{0,300}?a écrit\s*:/,            // FR
-    /\n\s*Il [\s\S]{0,300}?ha scritto:/,            // IT
-    /\n\s*Em [\s\S]{0,300}?escreveu:/,              // PT
-    /\n\s*Op [\s\S]{0,300}?schreef[\s\S]{0,60}?:/,  // NL
-    /\n\s*(W dniu|Dnia) [\s\S]{0,300}?napisa[łl][\s\S]{0,20}?:/, // PL
+    new RegExp("\\n\\s*On " + F + "wrote:"),                        // EN (Gmail, Apple Mail)
+    new RegExp("\\n\\s*El " + F + "escribi[oó]:"),                  // ES
+    new RegExp("\\n\\s*Am " + F + "schrieb[^\\n]{0,60}:"),          // DE
+    new RegExp("\\n\\s*Le " + F + "a écrit\\s*:"),                  // FR
+    new RegExp("\\n\\s*Il " + F + "ha scritto:"),                   // IT
+    new RegExp("\\n\\s*Em " + F + "escreveu:"),                     // PT
+    new RegExp("\\n\\s*Op " + F + "schreef[^\\n]{0,60}:"),          // NL
+    new RegExp("\\n\\s*(?:W dniu|Dnia) " + F + "napisa[łl][^\\n]{0,20}:"), // PL
     /\n-{2,}\s*(Original Message|Mensaje original|Ursprüngliche Nachricht|Message d'origine)/i,
     /\n\s*From:\s.+\n\s*Sent:\s/i,                  // Outlook
     /\n\s*_{5,}\s*\n/,
@@ -34,6 +40,37 @@ export function limpiarCitas(texto: string): string {
   for (const re of cortes) { const m = re.exec(t); if (m && m.index < idx) idx = m.index; }
   t = t.slice(0, idx);
   return t.split("\n").filter((l) => !/^\s*>/.test(l)).join("\n").trim();
+}
+
+/** Quita prefijos de respuesta/reenvío del asunto (Re:, RE:, Fwd:, AW:, SV:, TR:, RIF:, WG:, ODP:, ENC:, R:, RV:…). */
+export function sinPrefijosAsunto(subject: string): string {
+  let s = subject.trim();
+  for (let i = 0; i < 6; i++) {
+    const t = s.replace(/^(?:re|fwd?|fw|aw|sv|tr|rif|wg|odp|enc|rv|r|vs|ynt)\s*(?:\[\d+\])?\s*:\s*/i, "");
+    if (t === s) break;
+    s = t.trim();
+  }
+  return s;
+}
+
+/** ¿El asunto es (una respuesta a) un email NUESTRO? Nuestros asuntos terminan en «— Voice2Text»: su texto no es una petición. */
+export function esAsuntoNuestro(subject: string): boolean {
+  return /[—–-]\s*Voice2Text\s*$/i.test(sinPrefijosAsunto(subject));
+}
+
+/**
+ * Resultado DMARC del email según lo que escribió NUESTRO MTA (mail.voicetotexts.net):
+ *  - cabeceras Authentication-Results cuyo authserv-id es el nuestro (las ajenas podrían venir forjadas), y
+ *  - X-Spamd-Result de rspamd (símbolos DMARC_POLICY_ALLOW / REJECT / QUARANTINE / SOFTFAIL; DMARC_NA = sin DMARC).
+ * «fail» gana a «pass»; sin señal → «none».
+ */
+export function dmarcDe(headers: { get(k: string): unknown }, authserv = "mail.voicetotexts.net"): "pass" | "fail" | "none" {
+  const lista = (k: string) => { const raw = headers.get(k); return (Array.isArray(raw) ? raw : raw ? [raw] : []).map((h) => String((h as any)?.value ?? h)); };
+  const propias = lista("authentication-results").filter((h) => h.trim().toLowerCase().startsWith(authserv.toLowerCase())).join("\n");
+  const spamd = lista("x-spamd-result").join("\n");
+  if (/dmarc=fail/i.test(propias) || /DMARC_POLICY_(?:REJECT|QUARANTINE|SOFTFAIL)\b/.test(spamd)) return "fail";
+  if (/dmarc=pass/i.test(propias) || /DMARC_POLICY_ALLOW\b/.test(spamd)) return "pass";
+  return "none";
 }
 
 const RE_EMAIL = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi;
@@ -233,16 +270,16 @@ export const TEXTOS: Record<Lang, Textos> = {
   },
 };
 
-/** Aviso cuando la cuenta de pago está bajo un email distinto al remitente (por seguridad no se toca). */
-export const TEXTOS_OTRO_EMAIL: Record<Lang, { subject: string; body: string }> = {
-  en: { subject: "About your request — Voice2Text", body: "We found a subscription under {email}, which is different from the address you're writing from. For your security, please send us the cancellation request from that email address (or reply from it) and we'll take care of it right away." },
-  es: { subject: "Sobre tu solicitud — Voice2Text", body: "Hemos encontrado una suscripción bajo {email}, que no coincide con la dirección desde la que nos escribes. Por tu seguridad, envíanos la solicitud de cancelación desde ese email (o respóndenos desde él) y lo resolvemos enseguida." },
-  de: { subject: "Zu Ihrer Anfrage — Voice2Text", body: "Wir haben ein Abonnement unter {email} gefunden — das ist eine andere Adresse als die, von der Sie uns schreiben. Bitte senden Sie uns zu Ihrer Sicherheit die Kündigungsanfrage von dieser E-Mail-Adresse aus (oder antworten Sie von dort), dann kümmern wir uns sofort darum." },
-  fr: { subject: "À propos de votre demande — Voice2Text", body: "Nous avons trouvé un abonnement associé à {email}, une adresse différente de celle depuis laquelle vous nous écrivez. Pour votre sécurité, merci de nous envoyer votre demande de résiliation depuis cette adresse e-mail (ou d'y répondre depuis celle-ci) : nous nous en occuperons immédiatement." },
-  it: { subject: "In merito alla Sua richiesta — Voice2Text", body: "Abbiamo trovato un abbonamento associato a {email}, un indirizzo diverso da quello da cui ci scrive. Per la Sua sicurezza, La preghiamo di inviarci la richiesta di disdetta da quell'indirizzo email (o di rispondere da lì): ce ne occuperemo subito." },
-  nl: { subject: "Over uw verzoek — Voice2Text", body: "We hebben een abonnement gevonden onder {email}, een ander adres dan waarmee u ons mailt. Stuur ons voor uw veiligheid het opzegverzoek vanaf dat e-mailadres (of antwoord vanaf dat adres), dan regelen we het meteen." },
-  pl: { subject: "W sprawie Twojego zgłoszenia — Voice2Text", body: "Znaleźliśmy subskrypcję przypisaną do adresu {email}, który różni się od adresu, z którego do nas piszesz. Dla Twojego bezpieczeństwa prosimy o wysłanie prośby o anulowanie z tego adresu e-mail (lub odpowiedź z niego) — zajmiemy się tym natychmiast." },
-  pt: { subject: "Sobre a sua solicitação — Voice2Text", body: "Encontramos uma assinatura vinculada a {email}, um endereço diferente daquele de onde você nos escreve. Para a sua segurança, envie o pedido de cancelamento a partir desse e-mail (ou responda a partir dele) e resolveremos imediatamente." },
+/** Aviso al TITULAR de una cuenta de pago cuando otro email pide cancelarla (al remitente nunca se le dice nada de terceros). */
+export const TEXTOS_AVISO_TITULAR: Record<Lang, { subject: string; body: string }> = {
+  en: {"subject":"Security notice — Voice2Text","body":"We've received a message from {email} asking us to cancel the subscription linked to this address. If that was you, simply reply to this email from this address and we'll take care of it right away. If it wasn't you, you can ignore this message — nothing has been changed on your account."},
+  es: {"subject":"Aviso de seguridad — Voice2Text","body":"Hemos recibido un mensaje desde {email} pidiendo cancelar la suscripción asociada a esta dirección. Si has sido tú, responde a este email desde esta dirección y lo resolvemos enseguida. Si no has sido tú, puedes ignorar este mensaje: no se ha cambiado nada en tu cuenta."},
+  de: {"subject":"Sicherheitshinweis — Voice2Text","body":"Wir haben eine Nachricht von {email} erhalten, in der wir gebeten werden, das mit dieser Adresse verknüpfte Abonnement zu kündigen. Falls Sie das waren, antworten Sie einfach von dieser Adresse aus auf diese E-Mail, und wir kümmern uns sofort darum. Falls Sie das nicht waren, können Sie diese Nachricht ignorieren – an Ihrem Konto wurde nichts geändert."},
+  fr: {"subject":"Avis de sécurité — Voice2Text","body":"Nous avons reçu un message de {email} nous demandant d'annuler l'abonnement associé à cette adresse. Si c'était bien vous, il vous suffit de répondre à cet e-mail depuis cette adresse et nous nous en occuperons immédiatement. Si ce n'était pas vous, vous pouvez ignorer ce message : rien n'a été modifié sur votre compte."},
+  it: {"subject":"Avviso di sicurezza — Voice2Text","body":"Abbiamo ricevuto un messaggio da {email} con la richiesta di annullare l'abbonamento associato a questo indirizzo. Se è stato Lei, Le basta rispondere a questa email da questo indirizzo e ce ne occuperemo subito. Se non è stato Lei, può ignorare questo messaggio: non è stata apportata alcuna modifica al Suo account."},
+  nl: {"subject":"Beveiligingsmelding — Voice2Text","body":"We hebben een bericht ontvangen van {email} met het verzoek om het abonnement dat aan dit adres is gekoppeld op te zeggen. Als u dat zelf was, beantwoord dan gewoon deze e-mail vanaf dit adres en we regelen het meteen. Als u dat niet was, kunt u dit bericht negeren: er is niets aan uw account gewijzigd."},
+  pl: {"subject":"Powiadomienie dotyczące bezpieczeństwa — Voice2Text","body":"Otrzymaliśmy wiadomość z adresu {email} z prośbą o anulowanie subskrypcji powiązanej z tym adresem. Jeśli to Państwo wysłali tę prośbę, wystarczy odpowiedzieć na ten e-mail z tego samego adresu, a niezwłocznie się tym zajmiemy. Jeśli to nie Państwo, można tę wiadomość zignorować — na Państwa koncie nic nie zostało zmienione."},
+  pt: {"subject":"Aviso de segurança — Voice2Text","body":"Recebemos uma mensagem de {email} pedindo o cancelamento da assinatura associada a este endereço. Se foi você, basta responder a este e-mail a partir deste endereço e resolveremos de imediato. Se não foi você, pode ignorar esta mensagem: nada foi alterado na sua conta."},
 };
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
