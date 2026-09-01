@@ -1,6 +1,5 @@
 import "./globals.css";
 import type { ReactNode } from "react";
-import Script from "next/script";
 import { loadContent, t, getLocale } from "../src/lib/content.ts";
 import { Comportamiento } from "../src/ui/Comportamiento.tsx";
 
@@ -22,20 +21,23 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body>
         {children}
         <Comportamiento />
-        <Script src={`https://www.googletagmanager.com/gtag/js?id=${GADS_ID}`} strategy="afterInteractive" />
-        <Script id="gads-init" strategy="afterInteractive">{`
+        {/* Etiquetas ESTÁTICAS a propósito (no next/script): el verificador de Google Ads
+            escanea el HTML crudo y con next/script afterInteractive no las ve (solo están
+            en el payload RSC). React sube el <script async src> al <head> solo. */}
+        <script async src={`https://www.googletagmanager.com/gtag/js?id=${GADS_ID}`} />
+        <script dangerouslySetInnerHTML={{ __html: `
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
           gtag('config', '${GADS_ID}');
-        `}</Script>
-        <Script id="ms-clarity" strategy="afterInteractive">{`
+        ` }} />
+        <script dangerouslySetInnerHTML={{ __html: `
           (function(c,l,a,r,i,t,y){
               c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
               t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
               y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
           })(window, document, "clarity", "script", "${CLARITY_ID}");
-        `}</Script>
+        ` }} />
       </body>
     </html>
   );
