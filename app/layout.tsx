@@ -2,6 +2,7 @@ import "./globals.css";
 import type { ReactNode } from "react";
 import Script from "next/script";
 import { loadContent, t, getLocale } from "../src/lib/content.ts";
+import { Comportamiento } from "../src/ui/Comportamiento.tsx";
 
 // Google tag de Google Ads (medición de conversiones; la conversión se define por URL /thanks en el panel de Ads).
 const GADS_ID = "AW-18399245321";
@@ -18,6 +19,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html lang={locale}>
       <body>
         {children}
+        <Comportamiento />
         <Script src={`https://www.googletagmanager.com/gtag/js?id=${GADS_ID}`} strategy="afterInteractive" />
         <Script id="gads-init" strategy="afterInteractive">{`
           window.dataLayer = window.dataLayer || [];

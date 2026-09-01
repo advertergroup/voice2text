@@ -8,7 +8,7 @@ import { getPrisma } from "../db/client.ts";
  * El panel /admin/analytics agrega esta tabla + Transcription + SupportLog + Stripe.
  */
 
-export const TIPOS_EVENTO = ["pageview", "offer_shown", "offer_accepted", "purchase", "upgrade"] as const;
+export const TIPOS_EVENTO = ["pageview", "offer_shown", "offer_accepted", "purchase", "upgrade", "click", "engagement"] as const;
 export type TipoEvento = (typeof TIPOS_EVENTO)[number];
 
 /** Bots/monitores: sus visitas no cuentan. */
