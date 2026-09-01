@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { tieneStripe, getStripe } from "../../../../src/lib/stripe.ts";
+import { registrarEvento } from "../../../../src/lib/eventos.ts";
 import { loadContent } from "../../../../src/lib/content.ts";
 import { formatPrice } from "../../../../src/lib/locale.ts";
 
@@ -21,5 +23,7 @@ export async function POST(req: Request) {
   const pi = await stripe.paymentIntents.retrieve(paymentIntentId).catch(() => null);
   if (!pi || pi.status === "succeeded") return NextResponse.json({ ok: false }, { status: 404 });
   await stripe.paymentIntents.update(paymentIntentId, { amount: price, metadata: { ...(pi.metadata || {}), offerAccepted: "1" } });
+  const jar = await cookies();
+  await registrarEvento({ tipo: "offer_accepted", vid: jar.get("v2t_vid")?.value, origen: jar.get("v2t_src")?.value, valorCent: price, meta: paymentIntentId, path: "/pay" });
   return NextResponse.json({ ok: true, label: formatPrice(price, "USD") });
 }

@@ -4,6 +4,7 @@ import { getPrisma } from "../../../src/db/client.ts";
 import { tieneStripe, getStripe } from "../../../src/lib/stripe.ts";
 import { SESSION_COOKIE, signSession, hashPassword } from "../../../src/auth/core.ts";
 import { ANON_COOKIE, unlockUser } from "../../../src/lib/funnel.ts";
+import { registrarEvento } from "../../../src/lib/eventos.ts";
 import { randomUUID } from "node:crypto";
 
 export const runtime = "nodejs";
@@ -62,6 +63,20 @@ export async function GET(req: Request) {
       await prisma.user.update({ where: { id: user.id }, data: { subStatus: "TRIAL", planKey: "premium", stripeCustomerId: customerId, currentPeriodEnd: new Date(Date.now() + TRIAL_DAYS * 864e5) } }).catch(() => {});
     }
   }
+
+  // Analítica: compra registrada una sola vez por PaymentIntent (la página puede recargarse).
+  try {
+    const prisma2 = await getPrisma();
+    const ya = await prisma2.evento.findFirst({ where: { tipo: "purchase", meta: pi.id } });
+    if (!ya) {
+      const jar2 = await cookies();
+      await registrarEvento({
+        tipo: "purchase", meta: pi.id, valorCent: pi.amount, userId: user.id, trId: transcriptionId || null,
+        vid: jar2.get("v2t_vid")?.value, origen: jar2.get("v2t_src")?.value,
+        path: pi.metadata?.offerAccepted === "1" ? "/pay(oferta)" : "/pay",
+      });
+    }
+  } catch { /* la analítica nunca rompe el pago */ }
 
   // Reclama la transcripción anónima y desbloquea el resto.
   if (anonSession) await prisma.transcription.updateMany({ where: { anonSession }, data: { userId: user.id, anonSession: null } }).catch(() => {});

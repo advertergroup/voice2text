@@ -79,6 +79,7 @@ export async function POST(req: Request) {
       titulo: esMic ? "Voice recording" : titulo,
       sourceType: esMic ? "MIC" : sourceType, sourceUrl, language, mode, status: esManual ? "MANUAL" : "PROCESSING",
       locked: !paid, previewSeg: PREVIEW_SECONDS, fileKey, partial,
+      origen: jar.get("v2t_src")?.value === "ads" ? "ads" : null, // atribución Google Ads (analítica)
       contactEmail: user?.email ?? null,
       fileExpiresAt: (paid || partial) ? null : new Date(Date.now() + FILE_RETENTION_HOURS * 3600e3),
     },

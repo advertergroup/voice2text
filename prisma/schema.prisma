@@ -67,6 +67,7 @@ model Transcription {
   titulo      String      // nombre del fichero o de la URL
   sourceType  SourceType  @default(FILE)
   sourceUrl   String?
+  origen      String?     // "ads" si la subida vino de tráfico de Google Ads (cookie v2t_src)
   language    String      @default("auto")
   mode        TransMode   @default(STANDARD)
   status      TransStatus @default(QUEUED)
@@ -168,4 +169,23 @@ model SupportLog {
   createdAt DateTime @default(now())
 
   @@index([email, createdAt])
+}
+
+/// Evento de analítica (pageviews del middleware + funnel del servidor + beacons del checkout).
+model Evento {
+  id        String   @id @default(cuid())
+  tipo      String   // pageview | offer_shown | offer_accepted | purchase | upgrade
+  vid       String?  // visitante (cookie v2t_vid)
+  userId    String?
+  trId      String?
+  path      String?
+  locale    String?
+  origen    String?  // "ads" (Google Ads) | null (orgánico/directo)
+  referer   String?
+  valorCent Int?     // importe en céntimos para purchase/upgrade
+  meta      String?  // p. ej. id del PaymentIntent (idempotencia de purchase)
+  createdAt DateTime @default(now())
+
+  @@index([tipo, createdAt])
+  @@index([vid, createdAt])
 }

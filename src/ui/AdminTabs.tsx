@@ -2,7 +2,7 @@ import { LOCALES, DEFAULT_LOCALE } from "../lib/locale.ts";
 
 export function AdminTabs({ active, lang = DEFAULT_LOCALE }: { active: string; lang?: string }) {
   const q = lang && lang !== DEFAULT_LOCALE ? `?lang=${lang}` : "";
-  const tabs = [["/admin", "Textos y marca", "textos"], ["/admin/plans", "Planes/Precios", "plans"], ["/admin/faq", "FAQ", "faq"], ["/admin/landings", "Landings SEO", "landings"], ["/admin/manual", "⏳ Cola manual", "manual"]];
+  const tabs = [["/admin", "Textos y marca", "textos"], ["/admin/plans", "Planes/Precios", "plans"], ["/admin/faq", "FAQ", "faq"], ["/admin/landings", "Landings SEO", "landings"], ["/admin/manual", "⏳ Cola manual", "manual"], ["/admin/analytics", "📊 Analítica", "analytics"]];
   return (
     <div style={{ display: "flex", gap: 8, borderBottom: "1px solid var(--border)", marginBottom: 20, flexWrap: "wrap" }}>
       {tabs.map(([href, label, key]) => (

@@ -3,6 +3,7 @@ import { getPrisma } from "../../../../src/db/client.ts";
 import { getCurrentUser } from "../../../../src/auth/session.ts";
 import { tieneStripe, getStripe } from "../../../../src/lib/stripe.ts";
 import { unlockUser } from "../../../../src/lib/funnel.ts";
+import { registrarEvento } from "../../../../src/lib/eventos.ts";
 
 export const runtime = "nodejs";
 
@@ -25,6 +26,7 @@ export async function GET(req: Request) {
       data: { subStatus: "ACTIVE", planKey: "premium", trialEndsAt: null, currentPeriodEnd: new Date(Date.now() + 30 * 864e5) },
     });
     await unlockUser(user.id);
+    await registrarEvento({ tipo: "upgrade", userId: user.id, valorCent: 4999, meta: user.stripeSubscriptionId });
     return NextResponse.redirect(new URL("/dashboard?upgraded=1", base), { status: 303 });
   } catch {
     return NextResponse.redirect(new URL("/account?error=upgrade", base), { status: 303 });

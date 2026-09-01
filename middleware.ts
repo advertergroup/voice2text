@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import type { NextRequest, NextFetchEvent } from "next/server";
 import {
   DEFAULT_LOCALE, LOCALE_CODES, LANG_COOKIE,
   stripLocale, detectFromAcceptLanguage,
@@ -8,17 +8,49 @@ import {
 // Rutas que NO se localizan (área privada / checkout). Se sirven siempre sin prefijo.
 const NO_I18N = ["/dashboard", "/account", "/admin", "/pay", "/thanks"];
 
-export function middleware(req: NextRequest) {
+const VID_COOKIE = "v2t_vid"; // visitante para la analítica propia (/admin/analytics)
+const RE_BOT = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|whatsapp|telegram|headless|lighthouse|pagespeed|pingdom|uptime|monitor|scanner|curl|wget|python-requests|python-urllib|go-http|okhttp|axios|node-fetch|dataprovider|semrush|ahrefs|mj12|dotbot|petalbot|bytespider|gptbot|claudebot|ccbot|amazonbot|applebot/i;
+
+export function middleware(req: NextRequest, event: NextFetchEvent) {
   const { pathname, search } = req.nextUrl;
 
   // ¿Tráfico de Google Ads? (gclid/gad_source o ?src=ads) → marca cookie para la versión "ads" del checkout.
   const sp = req.nextUrl.searchParams;
   const isAds = sp.has("gclid") || sp.has("gad_source") || sp.get("src") === "ads";
-  const withAds = (res: NextResponse) => { if (isAds) res.cookies.set("v2t_src", "ads", { path: "/", maxAge: 60 * 60 * 24 * 30 }); return res; };
+  const esAds = isAds || req.cookies.get("v2t_src")?.value === "ads";
+
+  // Visitante (analítica): cookie de 1 año, se crea aquí para contar únicos.
+  let vid = req.cookies.get(VID_COOKIE)?.value || "";
+  const nuevoVid = !vid;
+  if (nuevoVid) vid = crypto.randomUUID();
+
+  const finish = (res: NextResponse) => {
+    if (isAds) res.cookies.set("v2t_src", "ads", { path: "/", maxAge: 60 * 60 * 24 * 30 });
+    if (nuevoVid) res.cookies.set(VID_COOKIE, vid, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+    return res;
+  };
+
+  // Pageview (fuera del camino crítico, tras responder). Sin bots, sin prefetch, solo GET servidos (no redirects).
+  const registrar = (path: string, locale: string) => {
+    const ua = req.headers.get("user-agent") || "";
+    const esPrefetch = req.headers.has("next-router-prefetch") || req.headers.get("purpose") === "prefetch" || (req.headers.get("sec-purpose") || "").includes("prefetch");
+    if (req.method !== "GET" || esPrefetch || RE_BOT.test(ua) || !process.env.CRON_SECRET) return;
+    event.waitUntil(
+      fetch(new URL("/api/t", req.nextUrl.origin), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          tipo: "pageview", k: process.env.CRON_SECRET, vid, path, locale,
+          origen: esAds ? "ads" : "", referer: req.headers.get("referer") || "",
+        }),
+      }).catch(() => {})
+    );
+  };
 
   // Área privada / checkout → no tocar (pero deja pasar, marcando ads si procede).
   if (NO_I18N.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
-    return withAds(NextResponse.next());
+    registrar(pathname, "");
+    return finish(NextResponse.next());
   }
 
   const { locale, rest } = stripLocale(pathname);
@@ -32,7 +64,8 @@ export function middleware(req: NextRequest) {
     headers.set("x-pathname", rest);
     const res = NextResponse.rewrite(url, { request: { headers } });
     res.cookies.set(LANG_COOKIE, locale, { path: "/", maxAge: 60 * 60 * 24 * 365 });
-    return withAds(res);
+    registrar(rest || "/", locale);
+    return finish(res);
   }
 
   // Caso 2: sin prefijo → idioma por defecto (es), salvo que el usuario prefiera otro
@@ -47,14 +80,15 @@ export function middleware(req: NextRequest) {
     url.pathname = (pathname === "/" ? "" : pathname);
     url.pathname = "/" + preferred + url.pathname;
     url.search = search;
-    return withAds(NextResponse.redirect(url));
+    return finish(NextResponse.redirect(url)); // el pageview se registra al servir la URL destino
   }
 
   // Idioma base: sirve tal cual, marcando x-locale=es.
   const headers = new Headers(req.headers);
   headers.set("x-locale", DEFAULT_LOCALE);
   headers.set("x-pathname", pathname);
-  return withAds(NextResponse.next({ request: { headers } }));
+  registrar(pathname, DEFAULT_LOCALE);
+  return finish(NextResponse.next({ request: { headers } }));
 }
 
 export const config = {

@@ -53,7 +53,12 @@ export function CheckoutForm(props: {
   // Oferta de salida: al intentar abandonar (ratón por arriba en desktop, atrás en móvil) → una sola vez.
   useEffect(() => {
     if (!exitOffer) return;
-    const trigger = () => { if (offerDone.current) return; offerDone.current = true; setShowOffer(true); };
+    const trigger = () => {
+      if (offerDone.current) return;
+      offerDone.current = true; setShowOffer(true);
+      // Analítica: oferta mostrada (beacon; nunca bloquea).
+      try { fetch("/api/t", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tipo: "offer_shown" }), keepalive: true }).catch(() => {}); } catch {}
+    };
     const onMouseOut = (e: MouseEvent) => { if (e.clientY <= 0 && !e.relatedTarget) trigger(); };
     document.addEventListener("mouseout", onMouseOut);
     try { history.pushState(null, "", location.href); } catch {}
