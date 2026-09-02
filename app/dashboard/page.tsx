@@ -8,6 +8,7 @@ import { Uploader } from "../../src/ui/Uploader.tsx";
 import { isLocale, DEFAULT_LOCALE, LANG_COOKIE } from "../../src/lib/locale.ts";
 import { ui } from "../../src/lib/ui.ts";
 import { esPagado, quotaAgotada } from "../../src/lib/funnel.ts";
+import { AdsConversion } from "../../src/ui/AdsConversion.tsx";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       <h1 style={{ fontSize: 26, marginTop: 0 }}>Nueva transcripción</h1>
       {errMsg && <div className="err" style={{ marginBottom: 16 }}>⚠️ {errMsg}{sp.error === "toobig" && sp.max ? ` (máximo ${sp.max} MB)` : ""}</div>}
       {sp.upgraded && <div className="ok" style={{ marginBottom: 16 }}>✓ {s.up_ok}</div>}
+      {/* Upgrade al mensual = la conversión valiosa de verdad; txid estable = sin duplicados al recargar. */}
+      {sp.upgraded && <AdsConversion value={49.99} txid={`up-${user.id}`} />}
       <div style={{ marginBottom: 30 }}>
         <div className="card" style={{ padding: 24 }}>
           <Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} quotaLocked={quota} quotaTexts={quotaTexts} quotaCtaHref={quotaCtaHref} />
