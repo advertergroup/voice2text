@@ -18,19 +18,21 @@ export async function GET(req: Request) {
   }
   const prisma = await getPrisma();
 
-  const ya = await prisma.evento.findFirst({ where: { tipo: "aviso", path: "trafico-ads" } });
+  // Fase 2: la primera alerta (trafico-ads) saltó con las visitas de los robots
+  // de revisión de Google (llegan con gclid); esta exige VOLUMEN real.
+  const ya = await prisma.evento.findFirst({ where: { tipo: "aviso", path: "trafico-ads-2" } });
   if (ya) return NextResponse.json({ ok: true, ya: true });
 
   const [s] = await prisma.$queryRawUnsafe<any[]>(
     `select count(*)::int as visitas, count(distinct vid)::int as visitantes,
             min("createdAt") as primera
        from "Evento" where tipo = 'pageview' and origen = 'ads'`);
-  if (!s || s.visitantes < 1) return NextResponse.json({ ok: true, esperando: true });
+  if (!s || s.visitantes < 6) return NextResponse.json({ ok: true, esperando: true, visitantes: s?.visitantes ?? 0 });
 
   const primera = new Date(s.primera).toLocaleString("es-ES", { timeZone: "Europe/Madrid", dateStyle: "short", timeStyle: "short" });
   const to = process.env.NOTIFY_EMAIL || "danielalcaiderod90@gmail.com";
   const html = `
-    <p><strong>La campaña de Google Ads ya está sirviendo: ha llegado el primer tráfico de EEUU.</strong></p>
+    <p><strong>Ahora sí: la campaña de Google Ads está sirviendo con volumen real de EEUU.</strong></p>
     <p>Hasta ahora: <strong>${s.visitas} páginas vistas</strong> de <strong>${s.visitantes} visitante(s)</strong> con clic de anuncio (gclid).<br/>
     Primera visita: ${primera} (hora de Madrid).</p>
     <p>Dónde mirarlo:</p>
@@ -43,6 +45,6 @@ export async function GET(req: Request) {
   const enviado = await sendMail(to, "🚀 Tráfico de Google Ads: la campaña está ACTIVA — Voice2Text", html);
   if (!enviado) return NextResponse.json({ ok: false, error: "mailer" }, { status: 500 });
 
-  await prisma.evento.create({ data: { tipo: "aviso", path: "trafico-ads", meta: JSON.stringify({ visitas: s.visitas, visitantes: s.visitantes }) } });
+  await prisma.evento.create({ data: { tipo: "aviso", path: "trafico-ads-2", meta: JSON.stringify({ visitas: s.visitas, visitantes: s.visitantes }) } });
   return NextResponse.json({ ok: true, enviado: true, visitas: s.visitas, visitantes: s.visitantes });
 }
