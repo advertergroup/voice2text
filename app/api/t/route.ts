@@ -34,6 +34,7 @@ export async function POST(req: Request) {
     const ua = req.headers.get("user-agent") || "";
     if (RE_BOT.test(ua)) return NextResponse.json({ ok: true });
     const jar = await cookies();
+    if (jar.get("v2t_int")) return NextResponse.json({ ok: true }); // navegador interno: no cuenta
     const vid = jar.get("v2t_vid")?.value;
     const origen = jar.get("v2t_src")?.value;
     const vp = body.vp === "movil" ? "movil" : "desktop";

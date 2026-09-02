@@ -10,6 +10,7 @@ import { useEffect } from "react";
 export function Comportamiento() {
   useEffect(() => {
     if (/^\/(admin|dashboard|login)/.test(location.pathname)) return;
+    if (/(^|; )v2t_int=/.test(document.cookie)) return; // navegador interno (ha pisado el admin)
     const vp = window.innerWidth < 768 ? "movil" : "desktop";
     let clicks = 0;
     let maxScroll = 0;

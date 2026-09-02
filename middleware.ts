@@ -35,6 +35,7 @@ export function middleware(req: NextRequest, event: NextFetchEvent) {
     const ua = req.headers.get("user-agent") || "";
     const esPrefetch = req.headers.has("next-router-prefetch") || req.headers.get("purpose") === "prefetch" || (req.headers.get("sec-purpose") || "").includes("prefetch");
     if (req.method !== "GET" || esPrefetch || RE_BOT.test(ua) || sp.has("hm")) return; // ?hm=1 = iframe del mapa de calor del admin
+    if (req.cookies.get("v2t_int") || path.startsWith("/admin")) return; // tráfico interno (Daniel) fuera de la analítica
     // OJO: detrás de nginx `nextUrl.origin` es http:// → el 301 a https convertiría el POST en GET.
     const proto = req.headers.get("x-forwarded-proto") || "http";
     const host = req.headers.get("host") || req.nextUrl.host;
