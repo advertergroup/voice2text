@@ -66,7 +66,7 @@ export default async function Pay({ searchParams }: { searchParams: Promise<Reco
     amount: TRIPWIRE_CENTS,
     currency: "usd",
     automatic_payment_methods: { enabled: true },
-    metadata: { transcriptionId: tr?.id || "", anonSession: tr?.anonSession || "", userId: user?.id || "" },
+    metadata: { transcriptionId: tr?.id || "", anonSession: tr?.anonSession || "", userId: user?.id || "", gclid: jar.get("v2t_gclid")?.value?.slice(0, 120) || "" },
   });
 
   return (

@@ -17,15 +17,16 @@ export default async function Thanks({ searchParams }: { searchParams: Promise<R
   const s = ui(locale);
   const dest = sp.t ? `/r/${encodeURIComponent(sp.t)}` : "/dashboard";
 
-  // Conversión de Ads con el importe REAL pagado ($0.99 u oferta) y el id del
-  // PaymentIntent como transaction_id. Solo con ?t= (sin t no hubo compra).
+  // Conversión de Ads SOLO si hay compra verificada en servidor: la fila purchase
+  // la escribe /pay/complete tras comprobar pi.status==="succeeded" en Stripe.
+  // Importe real ($0.99 u oferta) y PaymentIntent como transaction_id (dedupe).
+  // Sin fila (p. ej. ?t= inventado o bots) no se dispara nada.
   let conv: { value: number; txid: string } | null = null;
   if (sp.t) {
-    conv = { value: 0.99, txid: `t-${sp.t}` }; // fallback si la analítica no registró la compra
     try {
       const prisma = await getPrisma();
       const ev = await prisma.evento.findFirst({ where: { tipo: "purchase", trId: sp.t }, orderBy: { createdAt: "desc" } });
-      if (ev) conv = { value: (ev.valorCent || 99) / 100, txid: ev.meta || conv.txid };
+      if (ev) conv = { value: (ev.valorCent || 99) / 100, txid: ev.meta || `t-${sp.t}` };
     } catch { /* la analítica nunca rompe la página */ }
   }
 

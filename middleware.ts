@@ -26,6 +26,10 @@ export function middleware(req: NextRequest, event: NextFetchEvent) {
 
   const finish = (res: NextResponse) => {
     if (isAds) res.cookies.set("v2t_src", "ads", { path: "/", maxAge: 60 * 60 * 24 * 30 });
+    // El VALOR del gclid, 90 días: se adjunta al pago (metadata.gclid) para poder
+    // subir conversiones offline o auditar atribución más adelante.
+    const gclid = sp.get("gclid");
+    if (gclid) res.cookies.set("v2t_gclid", gclid.slice(0, 120), { path: "/", maxAge: 60 * 60 * 24 * 90, sameSite: "lax" });
     if (nuevoVid) res.cookies.set(VID_COOKIE, vid, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
     return res;
   };
