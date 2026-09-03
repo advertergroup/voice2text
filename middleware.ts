@@ -30,6 +30,11 @@ export function middleware(req: NextRequest, event: NextFetchEvent) {
     // subir conversiones offline o auditar atribución más adelante.
     const gclid = sp.get("gclid");
     if (gclid) res.cookies.set("v2t_gclid", gclid.slice(0, 120), { path: "/", maxAge: 60 * 60 * 24 * 90, sameSite: "lax" });
+    // Primer toque (90 días, NO se pisa): la query de la primera llegada con
+    // utm_* o marca de Ads. De aquí salen campaña/keyword de subidas y pagos.
+    if (!req.cookies.get("v2t_attr") && (isAds || /(^|[?&])utm_/.test(search))) {
+      res.cookies.set("v2t_attr", search.slice(1, 301), { path: "/", maxAge: 60 * 60 * 24 * 90, sameSite: "lax" });
+    }
     if (nuevoVid) res.cookies.set(VID_COOKIE, vid, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
     return res;
   };

@@ -47,6 +47,11 @@ model User {
   // Suscripción
   subStatus            SubStatus @default(NONE)
   planKey              String?   // "trial" | "premium" ...
+  // Atribución de primer toque (cookie v2t_attr), fijada al pagar: no se pisa.
+  utmSource            String?
+  utmCampaign          String?
+  utmTerm              String?
+  utmContent           String?
   stripeCustomerId     String?
   stripeSubscriptionId String?
   kunfupaySubscriptionId String? // id de suscripción en Kunfupay (de los webhooks)
@@ -68,6 +73,8 @@ model Transcription {
   sourceType  SourceType  @default(FILE)
   sourceUrl   String?
   origen      String?     // "ads" si la subida vino de tráfico de Google Ads (cookie v2t_src)
+  utmCampaign String?     // primer toque (cookie v2t_attr): campaña y keyword de Ads
+  utmTerm     String?
   language    String      @default("auto")
   mode        TransMode   @default(STANDARD)
   status      TransStatus @default(QUEUED)

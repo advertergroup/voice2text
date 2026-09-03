@@ -5,6 +5,7 @@ import { tieneStripe, getStripe } from "../../../src/lib/stripe.ts";
 import { SESSION_COOKIE, signSession, hashPassword } from "../../../src/auth/core.ts";
 import { ANON_COOKIE, unlockUser } from "../../../src/lib/funnel.ts";
 import { registrarEvento } from "../../../src/lib/eventos.ts";
+import { parseAttr } from "../../../src/lib/attr.ts";
 import { randomUUID } from "node:crypto";
 
 export const runtime = "nodejs";
@@ -63,6 +64,15 @@ export async function GET(req: Request) {
       await prisma.user.update({ where: { id: user.id }, data: { subStatus: "TRIAL", planKey: "premium", stripeCustomerId: customerId, currentPeriodEnd: new Date(Date.now() + TRIAL_DAYS * 864e5) } }).catch(() => {});
     }
   }
+
+  // Atribución de primer toque en el usuario (solo si aún no la tiene): de aquí
+  // salen ingresos/suscripciones por campaña y keyword en /admin/ads.
+  try {
+    const attr = parseAttr((await cookies()).get("v2t_attr")?.value);
+    if (attr.source && !user.utmSource) {
+      await prisma.user.update({ where: { id: user.id }, data: { utmSource: attr.source, utmCampaign: attr.campaign, utmTerm: attr.term, utmContent: attr.content } });
+    }
+  } catch { /* la atribución nunca rompe el pago */ }
 
   // Analítica: compra registrada una sola vez por PaymentIntent (la página puede recargarse).
   try {
