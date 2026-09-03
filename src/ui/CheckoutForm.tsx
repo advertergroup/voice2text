@@ -20,8 +20,10 @@ export function CheckoutForm(props: {
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [wallet, setWallet] = useState(false);         // ¿se ha dibujado Apple/Google Pay?
   const stripeRef = useRef<any>(null);
   const elementsRef = useRef<any>(null);
+  const emailRef = useRef(prefillEmail || "");         // el confirm del monedero corre en un closure viejo
   const peMounted = useRef(false);
   const offerDone = useRef(false); // ya mostrada o aceptada → no repetir
 
@@ -40,6 +42,25 @@ export function CheckoutForm(props: {
         appearance: { theme: "stripe", variables: { colorPrimary: B, colorText: "#0f172a", colorDanger: "#dc2626", borderRadius: "10px", fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif", spacingUnit: "4px" } },
       });
       elementsRef.current = elements;
+      // Botón del monedero (Apple Pay / Google Pay), ARRIBA del formulario: en
+      // SnapPassport Apple Pay aprueba el 77,5% frente al 47,3% de teclear la
+      // tarjeta. MISMO objeto `elements` = MISMO PaymentIntent: imposible
+      // cobrar dos veces. Apple Pay solo se dibuja con el dominio verificado
+      // en Stripe (payment_method_domains); sin eso no hay error, no aparece.
+      const ece = elements.create("expressCheckout", { emailRequired: true, paymentMethods: { link: "never" } });
+      ece.mount("#express-checkout");
+      ece.on("ready", (ev: any) => { if (!cancelled && ev?.availablePaymentMethods) setWallet(true); });
+      ece.on("confirm", async (ev: any) => {
+        // El email lo da la hoja del monedero (emailRequired); si no, el campo.
+        const mail = ev?.billingDetails?.email || emailRef.current || "";
+        const piId = clientSecret.split("_secret")[0];
+        if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) {
+          await fetch("/api/pay/prepare", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ paymentIntentId: piId, email: mail }) }).catch(() => {});
+        }
+        const returnUrl = `${window.location.origin}/pay/complete?t=${encodeURIComponent(transcriptionId)}`;
+        const { error } = await stripe.confirmPayment({ elements, confirmParams: { return_url: returnUrl, receipt_email: mail || undefined } });
+        if (error) setErr(error.message || s.pay_error!);
+      });
       const pe = elements.create("payment", { layout: "tabs" });
       pe.mount("#payment-element");
       peMounted.current = true;
@@ -104,9 +125,12 @@ export function CheckoutForm(props: {
         {textos.subtitle && <p style={{ color: "#475569", fontSize: 13.5, margin: "6px 0 0" }}>{f(textos.subtitle, vars)}</p>}
         <hr style={{ border: 0, borderTop: "1px solid #eef1f5", margin: "18px 0" }} />
 
+        <div id="express-checkout" />
+        {wallet && <hr style={{ border: 0, borderTop: "1px solid #eef1f5", margin: "16px 0" }} />}
+
         <form onSubmit={pay}>
           <label style={{ fontSize: 13, fontWeight: 600, color: "#334155" }}>{s.email}</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@email.com" required
+          <input type="email" value={email} onChange={(e) => { setEmail(e.target.value); emailRef.current = e.target.value; }} placeholder="you@email.com" required
             style={{ width: "100%", padding: "12px 14px", border: "1px solid #e5e7eb", borderRadius: 10, fontSize: 15, margin: "6px 0 16px", outline: "none" }} />
           <div id="payment-element" style={{ minHeight: 40 }} />
           {!ready && <div style={{ color: "#94a3b8", fontSize: 14, padding: "10px 0" }}>{s.loading_pay}</div>}

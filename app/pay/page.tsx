@@ -65,7 +65,11 @@ export default async function Pay({ searchParams }: { searchParams: Promise<Reco
   const pi = await stripe.paymentIntents.create({
     amount: TRIPWIRE_CENTS,
     currency: "usd",
-    automatic_payment_methods: { enabled: true },
+    // Solo tarjeta ("card" YA incluye Apple Pay y Google Pay por monedero).
+    // Motivo medido en SnapPassport: Link mete un intermediario que rompe
+    // cobros que la tarjeta sola aprueba (39/39 partner_insufficient_funds y
+    // 30/30 generic_payment_failed eran Link).
+    payment_method_types: ["card"],
     metadata: { transcriptionId: tr?.id || "", anonSession: tr?.anonSession || "", userId: user?.id || "", gclid: jar.get("v2t_gclid")?.value?.slice(0, 120) || "" },
   });
 

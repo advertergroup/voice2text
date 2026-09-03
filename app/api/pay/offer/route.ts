@@ -17,7 +17,10 @@ export async function POST(req: Request) {
   const c = await loadContent("es"); // precio/activación no son localizados
   const enabled = c["exitoffer.enabled"] === "1";
   const price = parseInt(c["exitoffer.price"] || "0", 10);
-  if (!enabled || !(price > 0 && price < TRIPWIRE_CENTS)) return NextResponse.json({ ok: false }, { status: 400 });
+  // Suelo de Stripe (USD, cuenta que liquida en USD): $0.50. Por debajo, el
+  // update del PaymentIntent revienta y el visitante ve la oferta fallar en
+  // silencio — mejor no ofrecerla que prometer un precio incobrable.
+  if (!enabled || !(price >= 50 && price < TRIPWIRE_CENTS)) return NextResponse.json({ ok: false }, { status: 400 });
 
   const stripe = await getStripe();
   const pi = await stripe.paymentIntents.retrieve(paymentIntentId).catch(() => null);
