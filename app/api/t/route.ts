@@ -26,6 +26,7 @@ export async function POST(req: Request) {
       tipo: "pageview",
       vid: body.vid as string, path: body.path as string, locale: body.locale as string,
       origen: body.origen as string, referer: body.referer as string,
+      meta: typeof body.q === "string" && body.q ? body.q.slice(0, 200) : null,
     });
     return NextResponse.json({ ok: true });
   }

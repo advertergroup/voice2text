@@ -116,6 +116,12 @@ export default async function Analytics() {
     select "recoveryStage" as stage, count(*)::int as n from "Transcription"
     where "recoveryStage" > 0 and "createdAt" > now() - interval '30 days' group by 1 order by 1`);
 
+  // Llegadas de Ads con su query string (la captura de meta arrancó el 03-09).
+  const llegadasAds = await prisma.$queryRawUnsafe<any[]>(`
+    select "createdAt" as cuando, path, meta from "Evento"
+    where tipo = 'pageview' and origen = 'ads'
+    order by "createdAt" desc limit 20`);
+
   // Únicos reales por ventana (la suma de únicos diarios sobreconta a quien vuelve).
   const uniqRows = await prisma.$queryRawUnsafe<any[]>(`
     select count(distinct vid) filter (where "createdAt" > now() - interval '7 days')::int as u7,
@@ -255,6 +261,28 @@ export default async function Analytics() {
           </tbody></table>
           <p className="muted" style={{ fontSize: 12 }}>Transcripciones que alcanzaron cada etapa (la etapa incluye las anteriores).</p>
         </div>
+      </div>
+
+      <div className="card" style={{ marginTop: 18, overflowX: "auto" }}>
+        <h3 style={{ marginTop: 0 }}>Últimas llegadas de Google Ads · qué parámetros traen</h3>
+        <table style={{ borderCollapse: "collapse", width: "100%" }}>
+          <thead><tr>
+            <th style={{ ...td, textAlign: "left", fontWeight: 700 }}>Cuándo</th>
+            <th style={{ ...td, textAlign: "left", fontWeight: 700 }}>Página</th>
+            <th style={{ ...td, textAlign: "left", fontWeight: 700 }}>Parámetros de la URL</th>
+          </tr></thead>
+          <tbody>
+            {llegadasAds.length === 0 && <tr><td style={{ ...td, textAlign: "left" }} colSpan={3} className="muted">Aún ninguna (la captura de parámetros arrancó el 03-09; las llegadas anteriores solo quedaron marcadas como «ads»).</td></tr>}
+            {llegadasAds.map((r: any, i: number) => (
+              <tr key={i}>
+                <td style={{ ...td, textAlign: "left", whiteSpace: "nowrap" }}>{new Date(r.cuando).toLocaleString("es-ES", { timeZone: TZ, day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
+                <td style={{ ...td, textAlign: "left" }}>{r.path}</td>
+                <td style={{ ...td, textAlign: "left", fontFamily: "monospace", fontSize: 12, wordBreak: "break-all" }}>{r.meta || "(sin parámetros)"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="muted" style={{ fontSize: 12 }}>Un clic real de anuncio debe traer al menos <code>gclid=…</code> (etiquetado automático de Google). Si además pusiste plantilla de seguimiento o sufijo de URL con utm, aparecerán aquí.</p>
       </div>
     </AppShell>
   );

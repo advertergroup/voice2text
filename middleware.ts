@@ -50,6 +50,9 @@ export function middleware(req: NextRequest, event: NextFetchEvent) {
         body: JSON.stringify({
           tipo: "pageview", k: process.env.CRON_SECRET || "", vid, path, locale,
           origen: esAds ? "ads" : "", referer: req.headers.get("referer") || "",
+          // La query completa de la llegada (gclid, gad_source, utm…): es la
+          // prueba de qué parámetros trae de verdad cada clic de anuncio.
+          q: search ? search.slice(0, 300) : "",
         }),
       }).then((r) => { if (!r.ok) console.warn("[analytics] beacon", r.status); })
         .catch((e) => console.warn("[analytics] beacon", e instanceof Error ? e.message : e))
