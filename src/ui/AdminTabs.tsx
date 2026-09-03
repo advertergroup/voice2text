@@ -3,7 +3,7 @@ import { MarcaInterno } from "./MarcaInterno.tsx";
 
 export function AdminTabs({ active, lang = DEFAULT_LOCALE }: { active: string; lang?: string }) {
   const q = lang && lang !== DEFAULT_LOCALE ? `?lang=${lang}` : "";
-  const tabs = [["/admin", "Textos y marca", "textos"], ["/admin/plans", "Planes/Precios", "plans"], ["/admin/faq", "FAQ", "faq"], ["/admin/landings", "Landings SEO", "landings"], ["/admin/manual", "⏳ Cola manual", "manual"], ["/admin/analytics", "📊 Analítica", "analytics"], ["/admin/heatmap", "🖱️ Mapa de calor", "heatmap"]];
+  const tabs = [["/admin", "Textos y marca", "textos"], ["/admin/plans", "Planes/Precios", "plans"], ["/admin/faq", "FAQ", "faq"], ["/admin/landings", "Landings SEO", "landings"], ["/admin/manual", "⏳ Cola manual", "manual"], ["/admin/analytics", "📊 Analítica", "analytics"], ["/admin/heatmap", "🖱️ Mapa de calor", "heatmap"], ["/admin/subidas", "📤 Subidas", "subidas"]];
   return (
     <div style={{ display: "flex", gap: 8, borderBottom: "1px solid var(--border)", marginBottom: 20, flexWrap: "wrap" }}>
       <MarcaInterno />
