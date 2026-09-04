@@ -8,6 +8,7 @@ import { Uploader } from "./Uploader.tsx";
 import { localePath, DEFAULT_LOCALE } from "../lib/locale.ts";
 import { ui } from "../lib/ui.ts";
 import { ANON_COOKIE, esPagado, quotaAgotada } from "../lib/funnel.ts";
+import { Pasos, Caracteristicas } from "./Secciones.tsx";
 
 /**
  * Plantilla COMPLETA de landing (calco funcional de la home): hero con el
@@ -55,8 +56,6 @@ export async function LandingFull({ slug }: { slug: string }) {
   const s = ui(locale);
   const quotaTexts = { title: s.quota_title!, desc: s.quota_desc!, cta: s.quota_cta!, later: s.quota_later! };
 
-  const feat = [["⚡", "feat.f1"], ["🌍", "feat.f2"], ["📄", "feat.f3"], ["🔒", "feat.f4"]];
-  const steps = [["steps.s1"], ["steps.s2"], ["steps.s3"]];
   const modes = [["modes.fast"], ["modes.std"], ["modes.pro"]];
 
   return (
@@ -75,37 +74,9 @@ export async function LandingFull({ slug }: { slug: string }) {
         </div>
       </div>
 
-      {/* 3 pasos */}
-      <section>
-        <div className="container">
-          <h2 className="section-title">{t(c, "steps.title")}</h2>
-          <div className="grid g3">
-            {steps.map(([k], i) => (
-              <div className="card" key={k}>
-                <div className="step-num">{i + 1}</div>
-                <h3>{t(c, `${k}.title`)}</h3>
-                <p>{t(c, `${k}.desc`)}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Características */}
-      <section className="alt">
-        <div className="container">
-          <h2 className="section-title">{t(c, "feat.title")}</h2>
-          <div className="grid g4">
-            {feat.map(([ico, k]) => (
-              <div className="card" key={k}>
-                <div className="ico">{ico}</div>
-                <h3>{t(c, `${k}.title`)}</h3>
-                <p>{t(c, `${k}.desc`)}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* 3 pasos + características (rediseño con ilustraciones) */}
+      <Pasos c={c} locale={locale} reg={reg} />
+      <Caracteristicas c={c} />
 
       {/* Modos */}
       <section>

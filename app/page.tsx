@@ -6,6 +6,7 @@ import { Uploader } from "../src/ui/Uploader.tsx";
 import { localePath } from "../src/lib/locale.ts";
 import { ui } from "../src/lib/ui.ts";
 import { ANON_COOKIE, esPagado, quotaAgotada } from "../src/lib/funnel.ts";
+import { Pasos, Caracteristicas } from "../src/ui/Secciones.tsx";
 
 export const dynamic = "force-dynamic";
 
@@ -32,10 +33,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   const s = ui(locale);
   const quotaTexts = { title: s.quota_title!, desc: s.quota_desc!, cta: s.quota_cta!, later: s.quota_later! };
 
-  const feat = [
-    ["⚡", "feat.f1"], ["🌍", "feat.f2"], ["📄", "feat.f3"], ["🔒", "feat.f4"],
-  ];
-  const steps = [["steps.s1"], ["steps.s2"], ["steps.s3"]];
   const modes = [["modes.fast"], ["modes.std"], ["modes.pro"]];
 
   return (
@@ -55,39 +52,9 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
         </div>
       </div>
 
-      {/* 3 pasos */}
-      <section>
-        <div className="container">
-          <h2 className="section-title">{t(c, "steps.title")}</h2>
-          <div className="section-sub"></div>
-          <div className="grid g3">
-            {steps.map(([k], i) => (
-              <div className="card" key={k}>
-                <div className="step-num">{i + 1}</div>
-                <h3>{t(c, `${k}.title`)}</h3>
-                <p>{t(c, `${k}.desc`)}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Características */}
-      <section className="alt">
-        <div className="container">
-          <h2 className="section-title">{t(c, "feat.title")}</h2>
-          <div className="section-sub"></div>
-          <div className="grid g4">
-            {feat.map(([ico, k]) => (
-              <div className="card" key={k}>
-                <div className="ico">{ico}</div>
-                <h3>{t(c, `${k}.title`)}</h3>
-                <p>{t(c, `${k}.desc`)}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* 3 pasos + características (rediseño con ilustraciones) */}
+      <Pasos c={c} locale={locale} reg={reg} />
+      <Caracteristicas c={c} />
 
       {/* Modos */}
       <section>

@@ -93,3 +93,20 @@ th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04
 .tag{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px}
 .tag.done{background:#dcfce7;color:#15803d}.tag.proc{background:#fef9c3;color:#a16207}.tag.err{background:#fee2e2;color:#b91c1c}.tag.queued{background:#e0e7ff;color:#4338ca}
 @media(max-width:820px){h1{font-size:38px}.g3,.g4,.g2{grid-template-columns:1fr}.nav-links{display:none}.side{display:none}.main{padding:20px}}
+
+/* ---- Secciones rediseñadas (pasos ilustrados + features con iconos de línea) ---- */
+.pcard{background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-sm);transition:transform .18s ease,box-shadow .18s ease}
+.pcard:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(2,6,23,.10)}
+.pcard-art{height:172px;display:flex;align-items:center;justify-content:center;background:
+  radial-gradient(220px 120px at 20% 0%,rgba(79,70,229,.12),transparent),
+  radial-gradient(240px 140px at 85% 110%,rgba(124,58,237,.14),transparent),
+  linear-gradient(160deg,#f2f4ff,#f7f4ff)}
+.pcard-body{padding:20px 24px 26px}
+.pcard-body h3{margin:12px 0 8px;font-size:19px}
+.pcard-body p{margin:0;color:var(--ink2);font-size:15px;line-height:1.6}
+.chip-step{display:inline-block;border:1px solid rgba(79,70,229,.45);color:var(--accent-ink);background:#fff;border-radius:8px;font-size:12.5px;font-weight:600;padding:3px 10px}
+.btn-pill{border-radius:999px;padding:16px 34px;position:relative}
+.btn-pill::after{content:"";position:absolute;inset:-4px;border-radius:999px;border:2px solid transparent;background:linear-gradient(90deg,var(--accent),var(--accent2),#22d3ee) border-box;-webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.5}
+.fcard{border-radius:18px;transition:transform .18s ease,box-shadow .18s ease}
+.fcard:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(2,6,23,.09)}
+.fico{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;color:var(--accent);background:linear-gradient(150deg,#eef2ff,#f5f3ff);border:1px solid #e5e9ff}
