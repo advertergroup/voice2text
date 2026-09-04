@@ -23,7 +23,7 @@ const DEF: Record<string, string> = {
  * URL desplegable y micro — todo dentro del mismo cuadro, con fila de iconos
  * abajo y la línea legal debajo. La lógica de subida no cambia.
  */
-export function Uploader({ dropzoneText: _dz, selectText, quotaLocked = false, quotaTexts, quotaCtaHref = "/pay", s, micHref = "/talk-to-text", termsHref = "/terms", privacyHref = "/privacy" }: {
+export function Uploader({ dropzoneText: _dz, selectText, quotaLocked = false, quotaTexts, quotaCtaHref = "/pay", s, micHref = "/talk-to-text", termsHref: _terms = "/terms", privacyHref: _priv = "/privacy" }: {
   dropzoneText: string; selectText: string; quotaLocked?: boolean; quotaTexts?: QuotaModalTexts; quotaCtaHref?: string;
   s?: UIStrings; micHref?: string; termsHref?: string; privacyHref?: string;
 }) {
@@ -103,11 +103,7 @@ export function Uploader({ dropzoneText: _dz, selectText, quotaLocked = false, q
           <button type="button" className="btn btn-primary" disabled={busy} onClick={() => enviar(null)} style={{ whiteSpace: "nowrap" }}>{tx("up_transcribe")}</button>
         </div>
 
-        <div className="upcard-foot" onClick={(e) => e.stopPropagation()}>
-          <div style={{ display: "flex", gap: 8 }}>
-            <span className="up-ico" title={tx("up_fast_hint")}><SVG d={<path d="M13 3 6 14h5l-1 7 7-11h-5l1-7z" />} /></span>
-            <span className="up-ico" title={tx("up_langs_hint")}><SVG d={<><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18" /></>} /></span>
-          </div>
+        <div className="upcard-foot" onClick={(e) => e.stopPropagation()} style={{ justifyContent: "flex-end" }}>
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" className="up-ico" title={tx("up_url_hint")} onClick={toggleUrl}>
               <SVG d={<><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5" /><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7L12.5 18.5" /></>} />
@@ -120,10 +116,6 @@ export function Uploader({ dropzoneText: _dz, selectText, quotaLocked = false, q
       </div>
 
       {err && <div className="err" style={{ maxWidth: 560, margin: "12px auto 0" }}>{err}</div>}
-
-      <p className="up-legal">
-        {tx("up_legal_pre")} <a href={termsHref}>{tx("legal_terms")}</a> · <a href={privacyHref}>{tx("legal_privacy")}</a>
-      </p>
 
       {/* Aviso de cuota: la prueba incluye una transcripción → activar el plan */}
       {showQuota && quotaTexts && (
