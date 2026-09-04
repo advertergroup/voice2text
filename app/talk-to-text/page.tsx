@@ -48,16 +48,18 @@ export default async function TalkToText() {
         <div className="container">
           <h1>{s.tt_h1}</h1>
           <p className="sub">{s.tt_sub}</p>
-          <MicRecorder t={micTexts} quotaLocked={quota} quotaTexts={quotaTexts} quotaCtaHref={quotaCtaHref} lang={locale} />
+          {/* UNA sola tarjeta: micro arriba, separador «or» y archivo/URL debajo */}
+          <div className="upcard" style={{ maxWidth: 660, margin: "0 auto", textAlign: "center", padding: "30px 22px 8px" }}>
+            <MicRecorder t={micTexts} quotaLocked={quota} quotaTexts={quotaTexts} quotaCtaHref={quotaCtaHref} lang={locale} bare />
 
-          <div aria-hidden style={{ display: "flex", alignItems: "center", gap: 14, maxWidth: 560, margin: "26px auto 16px", color: "var(--muted)", fontSize: 14, fontWeight: 600 }}>
-            <span style={{ height: 1, flex: 1, background: "var(--border)" }} />
-            {s.tt_or}
-            <span style={{ height: 1, flex: 1, background: "var(--border)" }} />
-          </div>
-          <div style={{ maxWidth: 660, margin: "0 auto", textAlign: "left" }}>
+            <div aria-hidden style={{ display: "flex", alignItems: "center", gap: 14, margin: "24px 0 0", color: "var(--muted)", fontSize: 14, fontWeight: 600 }}>
+              <span style={{ height: 1, flex: 1, background: "var(--border)" }} />
+              {s.tt_or}
+              <span style={{ height: 1, flex: 1, background: "var(--border)" }} />
+            </div>
+
             <Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} quotaLocked={quota} quotaTexts={quotaTexts} quotaCtaHref={quotaCtaHref}
-              s={s} micHref={localePath(locale, "/talk-to-text")} termsHref={localePath(locale, "/terms")} privacyHref={localePath(locale, "/privacy")} />
+              s={s} bare />
           </div>
           <div className="badges" style={{ marginTop: 16, justifyContent: "center", display: "flex" }}><span>{t(c, "hero.formats")}</span></div>
         </div>

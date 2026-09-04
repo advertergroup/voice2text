@@ -23,9 +23,11 @@ const DEF: Record<string, string> = {
  * URL desplegable y micro — todo dentro del mismo cuadro, con fila de iconos
  * abajo y la línea legal debajo. La lógica de subida no cambia.
  */
-export function Uploader({ dropzoneText: _dz, selectText, quotaLocked = false, quotaTexts, quotaCtaHref = "/pay", s, micHref = "/talk-to-text", termsHref: _terms = "/terms", privacyHref: _priv = "/privacy" }: {
+export function Uploader({ dropzoneText: _dz, selectText, quotaLocked = false, quotaTexts, quotaCtaHref = "/pay", s, micHref = "/talk-to-text", termsHref: _terms = "/terms", privacyHref: _priv = "/privacy", bare = false }: {
   dropzoneText: string; selectText: string; quotaLocked?: boolean; quotaTexts?: QuotaModalTexts; quotaCtaHref?: string;
   s?: UIStrings; micHref?: string; termsHref?: string; privacyHref?: string;
+  /** true = sin tarjeta propia ni fila de iconos (va embebido dentro de otra tarjeta, p. ej. bajo el micro). */
+  bare?: boolean;
 }) {
   const tx = (k: string) => (s && s[k]) || DEF[k] || k;
   const [file, setFile] = useState<File | null>(null);
@@ -73,15 +75,16 @@ export function Uploader({ dropzoneText: _dz, selectText, quotaLocked = false, q
     <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{p.d}</svg>
   );
 
+  const dragProps = {
+    onDragOver: (e: React.DragEvent) => { e.preventDefault(); setDrag(true); },
+    onDragLeave: () => setDrag(false),
+    onDrop: (e: React.DragEvent) => { e.preventDefault(); setDrag(false); if (gate()) return; const f = e.dataTransfer.files?.[0]; if (f) { setFile(f); enviar(f); } },
+  };
+
   return (
     <div>
-      <div
-        className={"upcard" + (drag ? " drag" : "")}
-        onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
-        onDragLeave={() => setDrag(false)}
-        onDrop={(e) => { e.preventDefault(); setDrag(false); if (gate()) return; const f = e.dataTransfer.files?.[0]; if (f) { setFile(f); enviar(f); } }}
-      >
-        <div className="upcard-main" onClick={abrirPicker} style={{ cursor: busy ? "default" : "pointer" }}>
+      <div className={bare ? (drag ? "drag" : undefined) : "upcard" + (drag ? " drag" : "")} {...dragProps}>
+        <div className="upcard-main" onClick={abrirPicker} style={{ cursor: busy ? "default" : "pointer", ...(bare ? { padding: "18px 0 6px" } : {}) }}>
           {busy ? (
             <>
               <div className="spinner" />
@@ -98,12 +101,12 @@ export function Uploader({ dropzoneText: _dz, selectText, quotaLocked = false, q
           <input ref={inputRef} type="file" accept="audio/*,video/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0] ?? null; setFile(f); if (f) enviar(f); }} />
         </div>
 
-        <div className="up-url-row" style={{ display: urlOpen && !busy ? "flex" : "none" }} onClick={(e) => e.stopPropagation()}>
+        <div className="up-url-row" style={{ display: urlOpen && !busy ? "flex" : "none", ...(bare ? { padding: "0 0 14px" } : {}) }} onClick={(e) => e.stopPropagation()}>
           <input ref={urlRef} type="url" placeholder={tx("up_url_ph")} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); enviar(null); } }} />
           <button type="button" className="btn btn-primary" disabled={busy} onClick={() => enviar(null)} style={{ whiteSpace: "nowrap" }}>{tx("up_transcribe")}</button>
         </div>
 
-        <div className="upcard-foot" onClick={(e) => e.stopPropagation()} style={{ justifyContent: "flex-end" }}>
+        {!bare && <div className="upcard-foot" onClick={(e) => e.stopPropagation()} style={{ justifyContent: "flex-end" }}>
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" className="up-ico" title={tx("up_url_hint")} onClick={toggleUrl}>
               <SVG d={<><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5" /><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7L12.5 18.5" /></>} />
@@ -112,7 +115,7 @@ export function Uploader({ dropzoneText: _dz, selectText, quotaLocked = false, q
               <SVG d={<><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></>} />
             </a>
           </div>
-        </div>
+        </div>}
       </div>
 
       {err && <div className="err" style={{ maxWidth: 560, margin: "12px auto 0" }}>{err}</div>}

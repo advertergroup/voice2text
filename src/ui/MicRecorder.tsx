@@ -7,8 +7,10 @@ export interface MicTexts {
 }
 
 /** Grabador de voz (talk to text): micrófono → grabación → "iniciar transcripción" → pipeline normal. */
-export function MicRecorder({ t, quotaLocked = false, quotaTexts, quotaCtaHref = "/pay", lang = "" }: {
+export function MicRecorder({ t, quotaLocked = false, quotaTexts, quotaCtaHref = "/pay", lang = "", bare = false }: {
   t: MicTexts; quotaLocked?: boolean; quotaTexts?: QuotaModalTexts; quotaCtaHref?: string; lang?: string;
+  /** true = sin su propia tarjeta (va embebido dentro de otra, p. ej. la de subida). */
+  bare?: boolean;
 }) {
   const [fase, setFase] = useState<"idle" | "rec" | "done" | "up">("idle");
   const [seg, setSeg] = useState(0);
@@ -72,7 +74,7 @@ export function MicRecorder({ t, quotaLocked = false, quotaTexts, quotaCtaHref =
   const B = { width: 96, height: 96, borderRadius: "50%", border: 0, cursor: "pointer", fontSize: 38, color: "#fff", boxShadow: "0 12px 30px rgba(79,70,229,.35)" } as const;
 
   return (
-    <div className="card" style={{ maxWidth: 560, margin: "0 auto", padding: 34, textAlign: "center" }}>
+    <div className={bare ? undefined : "card"} style={{ maxWidth: 560, margin: "0 auto", padding: bare ? "0" : 34, textAlign: "center" }}>
       {fase === "idle" && (
         <>
           <button onClick={grabar} style={{ ...B, background: "linear-gradient(135deg,#4f46e5,#7c3aed)" }} aria-label="record">🎙️</button>
