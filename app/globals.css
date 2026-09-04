@@ -110,3 +110,10 @@ th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04
 .fcard{border-radius:18px;transition:transform .18s ease,box-shadow .18s ease}
 .fcard:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(2,6,23,.09)}
 .fico{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;color:var(--accent);background:linear-gradient(150deg,#eef2ff,#f5f3ff);border:1px solid #e5e9ff}
+
+/* ---- Cuerpo SEO de las landings ---- */
+.landing-body h2{font-size:27px;font-weight:800;letter-spacing:-.01em;margin:38px 0 10px}
+.landing-body h2:first-child{margin-top:0}
+.landing-body>p{color:var(--ink2);margin:0 0 6px;line-height:1.75}
+.landing-body .faq{margin-top:10px}
+.landing-body .faq summary{font-size:16px}

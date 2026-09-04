@@ -8,7 +8,7 @@ import { Uploader } from "./Uploader.tsx";
 import { localePath, DEFAULT_LOCALE } from "../lib/locale.ts";
 import { ui } from "../lib/ui.ts";
 import { ANON_COOKIE, esPagado, quotaAgotada } from "../lib/funnel.ts";
-import { Pasos, Caracteristicas } from "./Secciones.tsx";
+import { Pasos, Caracteristicas, Modos } from "./Secciones.tsx";
 
 /**
  * Plantilla COMPLETA de landing (calco funcional de la home): hero con el
@@ -56,7 +56,6 @@ export async function LandingFull({ slug }: { slug: string }) {
   const s = ui(locale);
   const quotaTexts = { title: s.quota_title!, desc: s.quota_desc!, cta: s.quota_cta!, later: s.quota_later! };
 
-  const modes = [["modes.fast"], ["modes.std"], ["modes.pro"]];
 
   return (
     <>
@@ -79,19 +78,7 @@ export async function LandingFull({ slug }: { slug: string }) {
       <Caracteristicas c={c} />
 
       {/* Modos */}
-      <section>
-        <div className="container">
-          <h2 className="section-title">{t(c, "modes.title")}</h2>
-          <div className="grid g3">
-            {modes.map(([k]) => (
-              <div className="card" key={k}>
-                <h3>{t(c, `${k}.title`)}</h3>
-                <p>{t(c, `${k}.desc`)}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <Modos c={c} />
 
       {/* Cuerpo SEO del ángulo (incluye su FAQ) */}
       <section className="alt">

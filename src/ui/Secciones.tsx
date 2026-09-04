@@ -93,6 +93,35 @@ export function Pasos({ c, locale, reg }: { c: Record<string, string>; locale: s
   );
 }
 
+const ICONOS_MODO: Record<string, React.ReactNode> = {
+  "modes.fast": <path d="M13 3 6 14h5l-1 7 7-11h-5l1-7z" strokeLinejoin="round" />, // rayo
+  "modes.std": <><path d="M5 8h14M5 16h14" /><circle cx="9" cy="8" r="2.6" fill="#fff" /><circle cx="15" cy="16" r="2.6" fill="#fff" /></>, // sliders
+  "modes.pro": <path d="M12 3l7 6-7 12L5 9l7-6zM5 9h14M12 3l-3 6 3 12 3-12-3-6z" strokeLinejoin="round" />, // diamante
+};
+
+export function Modos({ c }: { c: Record<string, string> }) {
+  return (
+    <section>
+      <div className="container">
+        <h2 className="section-title">{t(c, "modes.title")}</h2>
+        <div className="grid g3" style={{ marginTop: 26 }}>
+          {(["modes.fast", "modes.std", "modes.pro"] as const).map((k) => (
+            <div className="card fcard" key={k}>
+              <div className="fico">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+                  {ICONOS_MODO[k]}
+                </svg>
+              </div>
+              <h3>{t(c, `${k}.title`)}</h3>
+              <p>{t(c, `${k}.desc`)}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function Caracteristicas({ c }: { c: Record<string, string> }) {
   return (
     <section className="alt">
