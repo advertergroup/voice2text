@@ -99,6 +99,9 @@ const ICONOS_MODO: Record<string, React.ReactNode> = {
   "modes.pro": <path d="M12 3l7 6-7 12L5 9l7-6zM5 9h14M12 3l-3 6 3 12 3-12-3-6z" strokeLinejoin="round" />, // diamante
 };
 
+// El título editable trae un emoji delante («⚡ Fast»); con el icono SVG sobra.
+const sinEmoji = (s: string) => s.replace(/^[^\p{L}\p{N}]+/u, "");
+
 export function Modos({ c }: { c: Record<string, string> }) {
   return (
     <section>
@@ -112,7 +115,7 @@ export function Modos({ c }: { c: Record<string, string> }) {
                   {ICONOS_MODO[k]}
                 </svg>
               </div>
-              <h3>{t(c, `${k}.title`)}</h3>
+              <h3>{sinEmoji(t(c, `${k}.title`))}</h3>
               <p>{t(c, `${k}.desc`)}</p>
             </div>
           ))}
