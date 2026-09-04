@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef } from "react";
+import type { UIStrings } from "../lib/ui.ts";
 
 // Archivos hasta este tamaño se suben enteros; los mayores se trocean (solo el inicio) para la preview.
 const FULL_MAX_BYTES = 200 * 1024 * 1024;   // 200 MB
@@ -7,12 +8,30 @@ const PREVIEW_CHUNK_BYTES = 20 * 1024 * 1024; // 20 MB (suficiente para la previ
 
 export interface QuotaModalTexts { title: string; desc: string; cta: string; later: string }
 
-export function Uploader({ dropzoneText, selectText, quotaLocked = false, quotaTexts, quotaCtaHref = "/pay" }: {
+// Fallback EN por si un caller viejo no pasa `s` (los callers actuales lo pasan siempre).
+const DEF: Record<string, string> = {
+  up_drag: "or drag & drop your file here", up_url_link: "You can also paste a URL",
+  up_url_ph: "Paste your link here (YouTube, etc.)", up_transcribe: "Transcribe", up_uploading: "Uploading…",
+  up_err: "Upload failed. Check your connection and try again.",
+  up_legal_pre: "By uploading a file or URL you agree to our", legal_terms: "Terms", legal_privacy: "Privacy",
+  up_fast_hint: "Fast AI transcription", up_langs_hint: "90+ languages",
+  up_url_hint: "Paste a URL", up_mic_hint: "Record with your microphone",
+};
+
+/**
+ * Tarjeta ÚNICA de subida (estilo moderno): botón grande, arrastrar y soltar,
+ * URL desplegable y micro — todo dentro del mismo cuadro, con fila de iconos
+ * abajo y la línea legal debajo. La lógica de subida no cambia.
+ */
+export function Uploader({ dropzoneText: _dz, selectText, quotaLocked = false, quotaTexts, quotaCtaHref = "/pay", s, micHref = "/talk-to-text", termsHref = "/terms", privacyHref = "/privacy" }: {
   dropzoneText: string; selectText: string; quotaLocked?: boolean; quotaTexts?: QuotaModalTexts; quotaCtaHref?: string;
+  s?: UIStrings; micHref?: string; termsHref?: string; privacyHref?: string;
 }) {
+  const tx = (k: string) => (s && s[k]) || DEF[k] || k;
   const [file, setFile] = useState<File | null>(null);
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [urlOpen, setUrlOpen] = useState(false);
   const [err, setErr] = useState("");
   const [showQuota, setShowQuota] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -41,38 +60,70 @@ export function Uploader({ dropzoneText, selectText, quotaLocked = false, quotaT
       const r = await fetch("/api/transcribe", { method: "POST", body: fd });
       if (r.redirected && r.url) { window.location.href = r.url; return; }
       if (r.ok && r.url) { window.location.href = r.url; return; }
-      setErr("No se pudo subir. Inténtalo de nuevo."); setBusy(false);
+      setErr(tx("up_err")); setBusy(false);
     } catch {
-      setErr("No se pudo subir. Revisa tu conexión e inténtalo de nuevo."); setBusy(false);
+      setErr(tx("up_err")); setBusy(false);
     }
   }
 
-  const onPick = (f: File | null) => { setFile(f); if (f) enviar(f); };
+  const abrirPicker = () => { if (gate() || busy) return; inputRef.current?.click(); };
+  const toggleUrl = () => { if (gate() || busy) return; setUrlOpen((v) => { const n = !v; if (n) setTimeout(() => urlRef.current?.focus(), 50); return n; }); };
+
+  const SVG = (p: { d: React.ReactNode }) => (
+    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{p.d}</svg>
+  );
 
   return (
     <div>
       <div
-        className={"dropzone" + (drag ? " drag" : "")}
+        className={"upcard" + (drag ? " drag" : "")}
         onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
         onDragLeave={() => setDrag(false)}
         onDrop={(e) => { e.preventDefault(); setDrag(false); if (gate()) return; const f = e.dataTransfer.files?.[0]; if (f) { setFile(f); enviar(f); } }}
-        onClick={() => { if (gate()) return; if (!busy) inputRef.current?.click(); }}
-        style={{ cursor: busy ? "default" : "pointer" }}
       >
-        <div className="ico">{busy ? "⏳" : file ? "🎧" : "📤"}</div>
-        <div style={{ fontWeight: 600, marginTop: 8 }}>{busy ? "Subiendo…" : file ? file.name : dropzoneText}</div>
-        {file && !busy && <div className="muted" style={{ fontSize: 13 }}>{(file.size / 1024 / 1024).toFixed(1)} MB</div>}
-        {!busy && <div style={{ marginTop: 14 }}><span className="btn btn-primary">{selectText}</span></div>}
-        <input ref={inputRef} type="file" accept="audio/*,video/*" style={{ display: "none" }} onChange={(e) => onPick(e.target.files?.[0] ?? null)} />
+        <div className="upcard-main" onClick={abrirPicker} style={{ cursor: busy ? "default" : "pointer" }}>
+          {busy ? (
+            <>
+              <div className="spinner" />
+              <div style={{ fontWeight: 600, marginTop: 14 }}>{tx("up_uploading")}</div>
+              {file && <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>{file.name} · {(file.size / 1024 / 1024).toFixed(1)} MB</div>}
+            </>
+          ) : (
+            <>
+              <span className="btn btn-primary btn-pill up-select">{selectText}</span>
+              <div className="up-drag">{tx("up_drag")}</div>
+              <button type="button" className="up-url-link" onClick={(e) => { e.stopPropagation(); toggleUrl(); }}>{tx("up_url_link")}</button>
+            </>
+          )}
+          <input ref={inputRef} type="file" accept="audio/*,video/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0] ?? null; setFile(f); if (f) enviar(f); }} />
+        </div>
+
+        <div className="up-url-row" style={{ display: urlOpen && !busy ? "flex" : "none" }} onClick={(e) => e.stopPropagation()}>
+          <input ref={urlRef} type="url" placeholder={tx("up_url_ph")} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); enviar(null); } }} />
+          <button type="button" className="btn btn-primary" disabled={busy} onClick={() => enviar(null)} style={{ whiteSpace: "nowrap" }}>{tx("up_transcribe")}</button>
+        </div>
+
+        <div className="upcard-foot" onClick={(e) => e.stopPropagation()}>
+          <div style={{ display: "flex", gap: 8 }}>
+            <span className="up-ico" title={tx("up_fast_hint")}><SVG d={<path d="M13 3 6 14h5l-1 7 7-11h-5l1-7z" />} /></span>
+            <span className="up-ico" title={tx("up_langs_hint")}><SVG d={<><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3.5 3 14 0 18M12 3c-3 3.5-3 14 0 18" /></>} /></span>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button type="button" className="up-ico" title={tx("up_url_hint")} onClick={toggleUrl}>
+              <SVG d={<><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5" /><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7L12.5 18.5" /></>} />
+            </button>
+            <a className="up-ico" title={tx("up_mic_hint")} href={micHref}>
+              <SVG d={<><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></>} />
+            </a>
+          </div>
+        </div>
       </div>
 
       {err && <div className="err" style={{ maxWidth: 560, margin: "12px auto 0" }}>{err}</div>}
 
-      <div style={{ textAlign: "center", margin: "14px 0", color: "var(--muted)" }}>— o pega una URL (YouTube, etc.) —</div>
-      <div style={{ display: "flex", gap: 10, maxWidth: 560, margin: "0 auto", flexWrap: "wrap", justifyContent: "center" }}>
-        <input ref={urlRef} type="url" placeholder="https://..." style={{ flex: 1, minWidth: 240 }} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); enviar(null); } }} />
-        <button className="btn btn-primary" disabled={busy} onClick={() => enviar(null)} style={{ whiteSpace: "nowrap" }}>{busy ? "Procesando…" : "Transcribir"}</button>
-      </div>
+      <p className="up-legal">
+        {tx("up_legal_pre")} <a href={termsHref}>{tx("legal_terms")}</a> · <a href={privacyHref}>{tx("legal_privacy")}</a>
+      </p>
 
       {/* Aviso de cuota: la prueba incluye una transcripción → activar el plan */}
       {showQuota && quotaTexts && (

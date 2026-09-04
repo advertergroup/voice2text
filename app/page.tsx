@@ -45,7 +45,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
           <p className="sub">{t(c, "hero.subtitle")}</p>
           {uperr && <div className="err" style={{ maxWidth: 560, margin: "0 auto 16px" }}>⚠️ {uperr}</div>}
           <div style={{ maxWidth: 660, margin: "0 auto", textAlign: "left" }}>
-            <Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} quotaLocked={quota} quotaTexts={quotaTexts} quotaCtaHref={quotaCtaHref} />
+            <Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} quotaLocked={quota} quotaTexts={quotaTexts} quotaCtaHref={quotaCtaHref}
+              s={s} micHref={localePath(locale, "/talk-to-text")} termsHref={localePath(locale, "/terms")} privacyHref={localePath(locale, "/privacy")} />
           </div>
           <div className="badges" style={{ marginTop: 16, justifyContent: "center", display: "flex" }}><span>{t(c, "hero.formats")}</span></div>
         </div>

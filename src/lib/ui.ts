@@ -59,6 +59,14 @@ export const UI_ES: UIStrings = {
   mic_uploading: "Subiendo y transcribiendo…",
   mic_denied: "No pudimos acceder al micrófono. Permite el acceso en tu navegador e inténtalo de nuevo.",
   tt_or: "¿Ya tienes un archivo de audio o vídeo?", tt_upload: "Súbelo aquí",
+  up_drag: "o arrastra y suelta tu archivo aquí",
+  up_url_link: "También puedes pegar una URL",
+  up_url_ph: "Pega aquí el enlace (YouTube, etc.)",
+  up_transcribe: "Transcribir", up_uploading: "Subiendo…",
+  up_err: "No se pudo subir. Revisa tu conexión e inténtalo de nuevo.",
+  up_legal_pre: "Al subir un archivo o URL aceptas nuestros",
+  up_fast_hint: "Transcripción IA rápida", up_langs_hint: "Más de 90 idiomas",
+  up_url_hint: "Pegar una URL", up_mic_hint: "Graba con tu micrófono",
 };
 
 export const UI_EN: UIStrings = {
@@ -117,6 +125,14 @@ export const UI_EN: UIStrings = {
   mic_uploading: "Uploading & transcribing…",
   mic_denied: "We couldn't access your microphone. Allow mic access in your browser and try again.",
   tt_or: "Already have an audio or video file?", tt_upload: "Upload it here",
+  up_drag: "or drag & drop your file here",
+  up_url_link: "You can also paste a URL",
+  up_url_ph: "Paste your link here (YouTube, etc.)",
+  up_transcribe: "Transcribe", up_uploading: "Uploading…",
+  up_err: "Upload failed. Check your connection and try again.",
+  up_legal_pre: "By uploading a file or URL you agree to our",
+  up_fast_hint: "Fast AI transcription", up_langs_hint: "90+ languages",
+  up_url_hint: "Paste a URL", up_mic_hint: "Record with your microphone",
 };
 
 /** Devuelve los textos de UI para un idioma (fallback a inglés). */

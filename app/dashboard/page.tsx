@@ -5,7 +5,7 @@ import { getCurrentUser } from "../../src/auth/session.ts";
 import { getPrisma } from "../../src/db/client.ts";
 import { AppShell } from "../../src/ui/AppShell.tsx";
 import { Uploader } from "../../src/ui/Uploader.tsx";
-import { isLocale, DEFAULT_LOCALE, LANG_COOKIE } from "../../src/lib/locale.ts";
+import { isLocale, DEFAULT_LOCALE, LANG_COOKIE, localePath } from "../../src/lib/locale.ts";
 import { ui } from "../../src/lib/ui.ts";
 import { esPagado, quotaAgotada } from "../../src/lib/funnel.ts";
 import { AdsConversion } from "../../src/ui/AdsConversion.tsx";
@@ -52,7 +52,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       {sp.upgraded && <AdsConversion value={49.99} txid={`up-${user.id}`} itemId="premium-monthly" itemName="Premium monthly plan" />}
       <div style={{ marginBottom: 30 }}>
         <div className="card" style={{ padding: 24 }}>
-          <Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} quotaLocked={quota} quotaTexts={quotaTexts} quotaCtaHref={quotaCtaHref} />
+          <Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} quotaLocked={quota} quotaTexts={quotaTexts} quotaCtaHref={quotaCtaHref}
+            s={s} micHref={localePath(locale, "/talk-to-text")} termsHref={localePath(locale, "/terms")} privacyHref={localePath(locale, "/privacy")} />
         </div>
       </div>
 
