@@ -148,3 +148,12 @@ button.up-ico:hover,a.up-ico:hover{border-color:var(--accent);color:var(--accent
   .upcard-main{padding:28px 16px 20px}
   .cta-band{padding:34px 20px}
 }
+
+/* Nav movil: que quepan Log in + Sign up sin recortes */
+@media (max-width:640px){
+  .nav-in{gap:10px;height:58px}
+  .nav-cta{gap:8px}
+  .nav-cta a.muted{white-space:nowrap;font-size:14px}
+  .nav-cta .btn{padding:9px 13px;font-size:14px;white-space:nowrap}
+  .container{padding-left:14px;padding-right:14px}
+}
