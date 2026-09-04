@@ -78,7 +78,10 @@ export function MicRecorder({ t, quotaLocked = false, quotaTexts, quotaCtaHref =
       {fase === "idle" && (
         <>
           <button onClick={grabar} style={{ ...B, background: "linear-gradient(135deg,#4f46e5,#7c3aed)" }} aria-label="record">🎙️</button>
-          <p style={{ fontWeight: 600, marginTop: 16 }}>{t.tap}</p>
+          {/* La frase también arranca la grabación (mismo gesto que el botón), en todos los idiomas. */}
+          <p onClick={grabar} role="button" tabIndex={0}
+             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); grabar(); } }}
+             style={{ fontWeight: 600, marginTop: 16, cursor: "pointer", userSelect: "none" }}>{t.tap}</p>
         </>
       )}
       {fase === "rec" && (
