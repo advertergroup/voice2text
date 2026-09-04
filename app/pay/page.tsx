@@ -85,6 +85,7 @@ export default async function Pay({ searchParams }: { searchParams: Promise<Reco
       s={ui(locale)}
       textos={textos}
       exitOffer={exitOffer}
+      brand={cont["brand.name"] || "Voice To Text"}
     />
   );
 }

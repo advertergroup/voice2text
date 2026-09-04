@@ -12,7 +12,7 @@ export interface ContentDef { key: string; label: string; grupo: string; value: 
 
 export const DEFAULT_CONTENT: ContentDef[] = [
   // ---- Marca ----
-  { key: "brand.name", grupo: "Marca", label: "Nombre de la marca", value: "Voice2Text", orden: 1 },
+  { key: "brand.name", grupo: "Marca", label: "Nombre de la marca", value: "Voice To Text", orden: 1 },
   { key: "brand.tagline", grupo: "Marca", label: "Eslogan (bajo el logo/menú)", value: "Audio y vídeo a texto", orden: 2 },
   { key: "seo.title", grupo: "Marca", label: "Título SEO (pestaña)", value: "{brand} — Transcribe audio y vídeo a texto al instante", orden: 3 },
   { key: "seo.description", grupo: "Marca", label: "Meta descripción", value: "Convierte audio y vídeo a texto en segundos con IA. Más de 90 idiomas, sin límites, exporta a TXT, DOCX, PDF y SRT.", multiline: true, orden: 4 },
@@ -161,7 +161,7 @@ export async function loadContent(locale: string = DEFAULT_LOCALE): Promise<Reco
     for (const r of rows as { key: string; value: string }[]) map[r.key] = r.value;
   } catch { /* BD no disponible → usa defaults/traducciones */ }
   // Resolución de placeholders (marca, empresa, dirección, email de contacto).
-  const brand = map["brand.name"] || "Voice2Text";
+  const brand = map["brand.name"] || "Voice To Text";
   const company = map["company.name"] || "";
   const address = map["company.address"] || "";
   const email = map["contact.email"] || "";

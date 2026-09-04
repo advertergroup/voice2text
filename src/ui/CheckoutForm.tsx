@@ -12,8 +12,9 @@ export function CheckoutForm(props: {
   transcriptionId: string; prefillEmail: string; s: UIStrings;
   textos: { subtitle: string; button: string; legal: string; secure: string };
   exitOffer: ExitOffer;
+  brand?: string;
 }) {
-  const { clientSecret, pk, todayLabel, monthlyLabel, trialDays, transcriptionId, prefillEmail, s, textos, exitOffer } = props;
+  const { clientSecret, pk, todayLabel, monthlyLabel, trialDays, transcriptionId, prefillEmail, s, textos, exitOffer, brand = "Voice To Text" } = props;
   const [email, setEmail] = useState(prefillEmail || "");
   const [today, setToday] = useState(todayLabel);      // precio de hoy (baja si acepta la oferta)
   const [showOffer, setShowOffer] = useState(false);
@@ -114,7 +115,7 @@ export function CheckoutForm(props: {
     <div style={{ minHeight: "100vh", background: "linear-gradient(180deg,#f7f8fb,#ffffff)", padding: "28px 16px", display: "flex", flexDirection: "column", alignItems: "center" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 20, color: "#0f172a", marginBottom: 18 }}>
         <span style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg,#4f46e5,#7c3aed)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>🎙️</span>
-        Voice2Text
+        {brand}
       </div>
 
       <div style={{ width: "100%", maxWidth: 460, background: "#fff", border: "1px solid #e5e7eb", borderRadius: 16, boxShadow: "0 12px 40px rgba(2,6,23,.08)", padding: 24 }}>
