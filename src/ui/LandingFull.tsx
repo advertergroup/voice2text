@@ -36,7 +36,12 @@ export async function landingMetadata(slug: string) {
   if (!lp) return {};
   const c = await loadContent(locale);
   const brand = t(c, "brand.name");
-  return { title: `${lp.titulo} — ${brand}`, description: lp.metaDesc.replaceAll("{brand}", brand) };
+  return {
+    title: `${lp.titulo} — ${brand}`,
+    description: lp.metaDesc.replaceAll("{brand}", brand),
+    // Canonical de la propia landing en su idioma (sirve para todas las /l/).
+    alternates: { canonical: localePath(locale, `/l/${slug}`) },
+  };
 }
 
 export async function LandingFull({ slug }: { slug: string }) {
