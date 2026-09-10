@@ -42,6 +42,10 @@ function Sidebar({ ctaHref, s }: { ctaHref: string; s: UIStrings }) {
 /** Vista de una transcripción: procesando / error / preview bloqueada (paywall + sidebar) / completa. */
 export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel = "", s, desbloqueando = false }: { tr: TrView; s: UIStrings; precio?: string; ctaHref: string; trialDays?: number; todayLabel?: string; desbloqueando?: boolean }) {
   const procesando = tr.status === "PROCESSING" || tr.status === "QUEUED";
+  // En el candado, el botón va SIN precio (el importe se ve con todo detalle en
+  // el checkout antes de pagar). Se recorta el « — {today}» final en cualquier
+  // idioma; si algún día la cadena cambia de forma, cae al texto completo.
+  const ctaSinPrecio = (s.cta || "").replace(/\s*[—–-]\s*\{today\}\s*$/, "");
   const restante = Math.max(0, (tr.duracionSeg || 0) - (tr.previewSeg || 25));
   const lineas = Math.min(22, Math.max(5, Math.round(restante / 4)));
   const vars = { today: todayLabel, price: precio || "", n: String(trialDays), x: fmtDur(restante) };
@@ -80,7 +84,7 @@ export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel = "",
                 <div style={{ fontSize: 36 }}>🔒</div>
                 <h3 style={{ margin: "10px 0 4px" }}>{restante > 0 ? f(s.missing!, vars) : s.unlock_title}</h3>
                 <p className="muted" style={{ maxWidth: 440, marginBottom: 18 }}>{s.pitch}</p>
-                <a href={ctaHref} className="btn btn-primary btn-lg">{f(s.cta!, vars)}</a>
+                <a href={ctaHref} className="btn btn-primary btn-lg">{f(ctaSinPrecio, vars)}</a>
               </div>
             </div>
 
