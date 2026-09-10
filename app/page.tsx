@@ -28,7 +28,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
 
   // Cuota: gratis y prueba de 7 días = 1 transcripción; ilimitadas solo con el plan mensual ACTIVO.
   const anon = (await cookies()).get(ANON_COOKIE)?.value ?? null;
-  const quota = user?.subStatus !== "ACTIVE" && await quotaAgotada(user?.id ?? null, anon);
+  // El modal de cuota es SOLO para el trial pagado (upsell al mensual); antes de pagar no hay límite.
+  const quota = esPagado(user) && user?.subStatus !== "ACTIVE" && await quotaAgotada(user?.id ?? null, anon);
   const quotaCtaHref = esPagado(user) ? "/api/account/upgrade" : "/pay";
   const s = ui(locale);
   const quotaTexts = { title: s.quota_title!, desc: s.quota_desc!, cta: s.quota_cta!, later: s.quota_later! };

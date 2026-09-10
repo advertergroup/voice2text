@@ -26,6 +26,18 @@ export function esPagado(u: { subStatus?: string | null } | null | undefined): b
 
 export const FREE_QUOTA = Number(process.env.FREE_QUOTA || 1); // transcripciones gratis por visitante/cuenta
 
+/** Tope anti-abuso para NO pagados: transcripciones en la última hora (cada preview quema CPU de Whisper). */
+export const FREE_HOURLY_LIMIT = Number(process.env.FREE_HOURLY_LIMIT || 5);
+export async function topeHorario(userId: string | null, anon: string | null): Promise<boolean> {
+  const prisma = await getPrisma();
+  const hace1h = new Date(Date.now() - 3600e3);
+  const where = userId ? { userId, createdAt: { gte: hace1h } }
+    : anon ? { anonSession: anon, createdAt: { gte: hace1h } } : null;
+  if (!where) return false;
+  const n = await prisma.transcription.count({ where });
+  return n >= FREE_HOURLY_LIMIT;
+}
+
 /** ¿Ha agotado ya su transcripción gratuita? (no cuenta las que dieron ERROR) */
 export async function quotaAgotada(userId: string | null, anon: string | null): Promise<boolean> {
   const prisma = await getPrisma();

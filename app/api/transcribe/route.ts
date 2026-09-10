@@ -9,7 +9,7 @@ import { transcribe, descargarDeUrl, probeDuration, extraerPreview, plataformaDe
 import { notifyManualJob } from "../../../src/lib/mailer.ts";
 import { parseAttr } from "../../../src/lib/attr.ts";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB, ALLOWED_EXT, sniffMedia, extSegura, scanClamAV } from "../../../src/lib/upload-guard.ts";
-import { PREVIEW_SECONDS, PREVIEW_WORDS, FILE_RETENTION_HOURS, ANON_COOKIE, esPagado, cleanupExpired, recortarPalabras, quotaAgotada } from "../../../src/lib/funnel.ts";
+import { PREVIEW_SECONDS, PREVIEW_WORDS, FILE_RETENTION_HOURS, ANON_COOKIE, esPagado, cleanupExpired, recortarPalabras, quotaAgotada, topeHorario } from "../../../src/lib/funnel.ts";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -42,9 +42,15 @@ export async function POST(req: Request) {
   const esMic = String(f.get("source") ?? "") === "mic";    // grabación de micrófono (landing talk-to-text)
   const prisma = await getPrisma();
 
-  // Cuota: 1 transcripción para visitantes y para la prueba de 7 días; ilimitadas solo con el plan mensual ACTIVO.
-  if (user?.subStatus !== "ACTIVE" && await quotaAgotada(user?.id ?? null, anon)) {
+  // Cuota: el límite de 1 es SOLO para la prueba de 7 días ya pagada (empuja al
+  // plan mensual). ANTES de pagar se puede reintentar sin límite — el muro es el
+  // candado de la preview; bloquear el 2º intento (archivo o URL equivocados)
+  // mataba la venta. Anti-abuso para no pagados: tope de intentos por hora.
+  if (esPagado(user) && user?.subStatus !== "ACTIVE" && await quotaAgotada(user?.id ?? null, anon)) {
     return fail("quota");
+  }
+  if (!esPagado(user) && await topeHorario(user?.id ?? null, anon)) {
+    return fail("limit");
   }
 
   let titulo = "", sourceType: "FILE" | "URL" = "FILE", sourceUrl: string | null = null, fileKey: string | null = null;

@@ -23,6 +23,7 @@ const ERRORES: Record<string, string> = {
   badtype: "Ese archivo no es un audio o vídeo válido. Formatos aceptados: MP3, WAV, M4A, AAC, OGG, MP4, MOV, MKV, WEBM…",
   toobig: "El archivo es demasiado grande.",
   infected: "El archivo se ha rechazado por seguridad: el antivirus detectó una amenaza.",
+  limit: "Has hecho varias pruebas seguidas. Espera un momento e inténtalo de nuevo.",
 };
 
 export default async function Dashboard({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
@@ -36,7 +37,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const errMsg = sp.error ? ERRORES[sp.error] : null;
 
   // Cuota: gratis y prueba de 7 días = 1 transcripción; ilimitadas solo con el plan mensual ACTIVO.
-  const quota = user.subStatus !== "ACTIVE" && await quotaAgotada(user.id, null);
+  // El modal de cuota es SOLO para el trial pagado (upsell al mensual); antes de pagar no hay límite.
+  const quota = esPagado(user) && user.subStatus !== "ACTIVE" && await quotaAgotada(user.id, null);
   const quotaCtaHref = esPagado(user) ? "/api/account/upgrade" : "/pay"; // TRIAL → pasar al mensual; gratis → checkout
   const cookieLang = (await cookies()).get(LANG_COOKIE)?.value;
   const locale = isLocale(cookieLang) ? cookieLang! : DEFAULT_LOCALE;
