@@ -159,3 +159,9 @@ button.up-ico:hover,a.up-ico:hover{border-color:var(--accent);color:var(--accent
   .logo{font-size:16px}
   .logo .mark{width:28px;height:28px;font-size:15px}
 }
+
+/* Resultado en movil: sidebar a ancho completo bajo el texto, titulo contenido */
+@media (max-width:700px){
+  .res-side{width:100% !important}
+  section h1{font-size:20px !important;line-height:1.3}
+}

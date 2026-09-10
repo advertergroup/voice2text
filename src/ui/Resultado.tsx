@@ -19,7 +19,7 @@ function Sidebar({ ctaHref, s }: { ctaHref: string; s: UIStrings }) {
     { titulo: s.sec_more!, items: [["🕒", s.it_ts!], ["🌐", s.it_translate!], ["🔗", s.it_share!], ["⬇️", s.it_audio!], ["✏️", s.it_rename!], ["📁", s.it_move!], ["🗑️", s.it_delete!]] },
   ];
   return (
-    <aside style={{ width: 260, flexShrink: 0 }}>
+    <aside className="res-side" style={{ width: 260, flexShrink: 0 }}>
       <div className="card" style={{ padding: 16 }}>
         {secciones.map((sec) => (
           <div key={sec.titulo} style={{ marginBottom: 14 }}>
@@ -40,7 +40,7 @@ function Sidebar({ ctaHref, s }: { ctaHref: string; s: UIStrings }) {
 }
 
 /** Vista de una transcripción: procesando / error / preview bloqueada (paywall + sidebar) / completa. */
-export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel = "", s }: { tr: TrView; s: UIStrings; precio?: string; ctaHref: string; trialDays?: number; todayLabel?: string }) {
+export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel = "", s, desbloqueando = false }: { tr: TrView; s: UIStrings; precio?: string; ctaHref: string; trialDays?: number; todayLabel?: string; desbloqueando?: boolean }) {
   const procesando = tr.status === "PROCESSING" || tr.status === "QUEUED";
   const restante = Math.max(0, (tr.duracionSeg || 0) - (tr.previewSeg || 25));
   const lineas = Math.min(22, Math.max(5, Math.round(restante / 4)));
@@ -59,7 +59,13 @@ export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel = "",
 
       {tr.status === "DONE" && !tr.locked && (tr.texto ? <Editor id={tr.id} initial={tr.texto} /> : <ReuploadForm id={tr.id} s={s} />)}
 
-      {tr.status === "DONE" && tr.locked && (
+      {/* Comprador esperando el desbloqueo en 2º plano: barra que sondea hasta
+          locked=false y recarga sola — NUNCA el candado a quien ya ha pagado. */}
+      {tr.status === "DONE" && tr.locked && desbloqueando && (
+        <ProgressBar id={tr.id} hasta="unlocked" title={s.unlock_wait_title!} sub={s.unlock_wait_sub!} />
+      )}
+
+      {tr.status === "DONE" && tr.locked && !desbloqueando && (
         <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 300 }}>
             {tr.preview && <div className="card" style={{ padding: 22, fontSize: 15.5, lineHeight: 1.75, whiteSpace: "pre-wrap" }}>{tr.preview}</div>}

@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 
-/** Barra de progreso mientras se transcribe. Sondea el estado y recarga la página al terminar. */
-export function ProgressBar({ id, title, sub }: { id: string; title?: string; sub?: string }) {
+/** Barra de progreso mientras se transcribe. Sondea el estado y recarga la página al terminar.
+ *  hasta="unlocked": espera a que locked pase a false (desbloqueo tras el pago), no solo a DONE. */
+export function ProgressBar({ id, title, sub, hasta = "done" }: { id: string; title?: string; sub?: string; hasta?: "done" | "unlocked" }) {
   const [p, setP] = useState(6);
   const done = useRef(false);
 
@@ -14,14 +15,17 @@ export function ProgressBar({ id, title, sub }: { id: string; title?: string; su
       try {
         const r = await fetch(`/api/transcription/${id}/status`, { cache: "no-store" });
         const j = await r.json();
-        if (j.status && j.status !== "PROCESSING" && j.status !== "QUEUED" && !done.current) {
+        const listo = hasta === "unlocked"
+          ? j.locked === false
+          : (j.status && j.status !== "PROCESSING" && j.status !== "QUEUED");
+        if (listo && !done.current) {
           done.current = true; setP(100);
           setTimeout(() => location.reload(), 400);
         }
       } catch { /* reintenta */ }
     }, 2000);
     return () => { clearInterval(anim); clearInterval(poll); };
-  }, [id]);
+  }, [id, hasta]);
 
   return (
     <div className="card" style={{ textAlign: "center", padding: 46 }}>

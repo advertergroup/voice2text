@@ -65,6 +65,8 @@ export const UI_ES: UIStrings = {
   up_transcribe: "Transcribir", up_uploading: "Subiendo…",
   up_err: "No se pudo subir. Revisa tu conexión e inténtalo de nuevo.",
   up_legal_pre: "Al subir un archivo o URL aceptas nuestros",
+  unlock_wait_title: "Pago recibido — completando tu transcripción",
+  unlock_wait_sub: "Estamos transcribiendo el texto completo. En unos segundos aparecerá aquí solo.",
   up_fast_hint: "Transcripción IA rápida", up_langs_hint: "Más de 90 idiomas",
   up_url_hint: "Pegar una URL", up_mic_hint: "Graba con tu micrófono",
 };
@@ -131,6 +133,8 @@ export const UI_EN: UIStrings = {
   up_transcribe: "Transcribe", up_uploading: "Uploading…",
   up_err: "Upload failed. Check your connection and try again.",
   up_legal_pre: "By uploading a file or URL you agree to our",
+  unlock_wait_title: "Payment received — finishing your transcription",
+  unlock_wait_sub: "We're transcribing the full text. It will appear here by itself in a few seconds.",
   up_fast_hint: "Fast AI transcription", up_langs_hint: "90+ languages",
   up_url_hint: "Paste a URL", up_mic_hint: "Record with your microphone",
 };

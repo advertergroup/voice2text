@@ -7,7 +7,7 @@ import { LanguageSwitcher } from "../../../src/ui/site.tsx";
 import { Resultado } from "../../../src/ui/Resultado.tsx";
 import { formatPrice } from "../../../src/lib/locale.ts";
 import { ui } from "../../../src/lib/ui.ts";
-import { ANON_COOKIE } from "../../../src/lib/funnel.ts";
+import { ANON_COOKIE, esPagado, unlockUser } from "../../../src/lib/funnel.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +23,12 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   const anon = (await cookies()).get(ANON_COOKIE)?.value;
   const owns = (user && tr.userId === user.id) || (!!tr.anonSession && !!anon && tr.anonSession === anon);
   if (!owns) notFound();
+
+  // Comprador con la transcripción aún bloqueada = el desbloqueo en 2º plano no
+  // terminó (o falló). Se RE-LANZA (idempotente) y se enseña la espera con
+  // sondeo, nunca el candado a quien ya pagó.
+  const desbloqueando = !!(esPagado(user) && tr.locked && tr.userId === user?.id);
+  if (desbloqueando) void unlockUser(user!.id);
 
   const plan = await prisma.plan.findFirst({ where: { key: "premium", locale: "es" } });
   const precio = plan ? formatPrice(plan.precioCent, plan.moneda) : "";
@@ -43,7 +49,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
 
       <section style={{ flex: 1, paddingTop: 26, paddingBottom: 40 }}>
         <div className="container" style={{ maxWidth: 900 }}>
-          <Resultado tr={tr as any} s={s} precio={precio} ctaHref={`/pay?t=${tr.id}`} trialDays={trialDays} todayLabel={todayLabel} />
+          <Resultado tr={tr as any} s={s} precio={precio} ctaHref={`/pay?t=${tr.id}`} trialDays={trialDays} todayLabel={todayLabel} desbloqueando={desbloqueando} />
         </div>
       </section>
 
