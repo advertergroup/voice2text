@@ -97,7 +97,10 @@ export async function POST(req: Request) {
   });
 
   if (esManual) {
-    void notifyManualJob({ id: trans.id, sourceUrl, titulo, language });
+    // Solo avisa al subir si YA está pagado (entrega inmediata a mano). Si no,
+    // el aviso salta al PAGAR (VENTA de YouTube en /pay/complete): sin ruido de
+    // subidas que nunca compran.
+    if (paid) void notifyManualJob({ id: trans.id, sourceUrl, titulo, language });
     const res = NextResponse.redirect(new URL(`/r/${trans.id}`, base), { status: 303 });
     if (setAnon && anon) res.cookies.set(ANON_COOKIE, anon, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 30 });
     return res;

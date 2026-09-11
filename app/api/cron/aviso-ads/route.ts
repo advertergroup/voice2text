@@ -73,8 +73,11 @@ export async function GET(req: Request) {
     // Respaldo: si la analítica no registró la compra, Stripe la delata igual.
     try {
       const stripe = await getStripe();
-      const ch = await stripe.charges.list({ limit: 3 });
-      const c = ch.data.find((x: any) => x.status === "succeeded" && x.paid && !x.refunded);
+      const ch = await stripe.charges.list({ limit: 5 });
+      // Ignora el cargo de la compra de PRUEBA de Daniel (no reembolsado a
+      // propósito): no debe disparar el aviso de «primera venta» real.
+      const IGNORAR = ["ch_3UECdaFo7btWBIWk1SoQ6bzM"];
+      const c = ch.data.find((x: any) => x.status === "succeeded" && x.paid && !x.refunded && !IGNORAR.includes(x.id));
       if (c) {
         venta = {
           importe: (c.amount / 100).toFixed(2) + " " + c.currency.toUpperCase(),

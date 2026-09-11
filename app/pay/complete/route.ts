@@ -6,7 +6,10 @@ import { SESSION_COOKIE, signSession, hashPassword } from "../../../src/auth/cor
 import { ANON_COOKIE, unlockUser } from "../../../src/lib/funnel.ts";
 import { registrarEvento } from "../../../src/lib/eventos.ts";
 import { parseAttr } from "../../../src/lib/attr.ts";
+import { sendMail } from "../../../src/lib/mailer.ts";
 import { randomUUID } from "node:crypto";
+
+const esc = (s: string) => s.replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]!));
 
 export const runtime = "nodejs";
 
@@ -91,6 +94,22 @@ export async function GET(req: Request) {
   // Reclama la transcripción anónima y desbloquea el resto.
   if (anonSession) await prisma.transcription.updateMany({ where: { anonSession }, data: { userId: user.id, anonSession: null } }).catch(() => {});
   await unlockUser(user.id);
+
+  // VENTA DE YOUTUBE/MANUAL: avisar a Daniel para que la procese a mano (<24h).
+  // Solo para validar la demanda mientras no hay API automática de YouTube.
+  try {
+    if (transcriptionId) {
+      const tr = await prisma.transcription.findUnique({ where: { id: transcriptionId }, select: { status: true, sourceUrl: true, titulo: true } });
+      if (tr?.status === "MANUAL") {
+        const to = process.env.NOTIFY_EMAIL || "danielalcaiderod90@gmail.com";
+        await sendMail(to, "💸 VENTA de YouTube — transcribir a mano (<24h)", `
+          <p><strong>Un cliente ha PAGADO una transcripción de YouTube/Instagram.</strong> Súbela en menos de 24 h.</p>
+          <p>Vídeo: <a href="${esc(tr.sourceUrl || "")}">${esc(tr.sourceUrl || tr.titulo)}</a><br/>
+          Cliente: ${esc(user.email)}</p>
+          <p>Procesar en <a href="https://voicetotexts.net/admin/manual">/admin/manual</a>: descarga el audio del vídeo y súbelo al ítem.</p>`);
+      }
+    }
+  } catch { /* el aviso nunca rompe el pago */ }
 
   // Aterriza en /thanks (página de conversión para Google Ads) y de ahí sigue a la transcripción.
   const dest = transcriptionId ? `/thanks?t=${encodeURIComponent(transcriptionId)}` : "/thanks";

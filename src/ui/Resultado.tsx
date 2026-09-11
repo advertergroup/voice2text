@@ -59,7 +59,16 @@ export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel = "",
       </div>
 
       {procesando && <ProgressBar id={tr.id} title={s.proc_title!} sub={s.proc_sub!} />}
-      {tr.status === "MANUAL" && <ManualNotice id={tr.id} s={s} hasEmail={!!tr.contactEmail} />}
+      {/* MANUAL (YouTube/Instagram): sin pagar → paywall normal; pagado → aviso de 24h en el panel. */}
+      {tr.status === "MANUAL" && !tr.locked && <ManualNotice id={tr.id} s={s} hasEmail={!!tr.contactEmail} />}
+      {tr.status === "MANUAL" && tr.locked && (
+        <div className="card" style={{ textAlign: "center", padding: 40, maxWidth: 520, margin: "0 auto" }}>
+          <div style={{ fontSize: 38 }}>🔒</div>
+          <h3 style={{ margin: "12px 0 6px" }}>{s.manual_unlock_title}</h3>
+          <p className="muted" style={{ maxWidth: 420, margin: "0 auto 20px" }}>{s.manual_unlock_desc}</p>
+          <a href={ctaHref} className="btn btn-primary btn-lg">{f(ctaSinPrecio, vars)}</a>
+        </div>
+      )}
       {tr.status === "ERROR" && <div className="err">{tr.error || s.err}</div>}
 
       {tr.status === "DONE" && !tr.locked && (tr.texto ? <Editor id={tr.id} initial={tr.texto} /> : <ReuploadForm id={tr.id} s={s} />)}
