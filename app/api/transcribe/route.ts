@@ -8,6 +8,7 @@ import { getCurrentUser } from "../../../src/auth/session.ts";
 import { transcribe, descargarDeUrl, probeDuration, extraerPreview, plataformaDeUrl } from "../../../src/lib/transcribe.ts";
 import { notifyManualJob } from "../../../src/lib/mailer.ts";
 import { parseAttr } from "../../../src/lib/attr.ts";
+import { eventoEmbudo } from "../../../src/lib/embudo.ts";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB, ALLOWED_EXT, sniffMedia, extSegura, scanClamAV } from "../../../src/lib/upload-guard.ts";
 import { PREVIEW_SECONDS, PREVIEW_WORDS, FILE_RETENTION_HOURS, ANON_COOKIE, esPagado, cleanupExpired, recortarPalabras, quotaAgotada, topeHorario } from "../../../src/lib/funnel.ts";
 
@@ -81,6 +82,7 @@ export async function POST(req: Request) {
   const esManual = sourceUrl !== null && (plataforma === "youtube" || plataforma === "instagram");
 
   const attr = parseAttr(jar.get("v2t_attr")?.value);
+  void eventoEmbudo("upload_started", { path: esMic ? "/talk-to-text" : null });
   const trans = await prisma.transcription.create({
     data: {
       userId: user?.id ?? null, anonSession: user ? null : anon,

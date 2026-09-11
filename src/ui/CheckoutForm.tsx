@@ -32,6 +32,7 @@ export function CheckoutForm(props: {
   const B = "#4f46e5";
 
   useEffect(() => {
+    try { (window as any).gtag?.("event", "checkout_started"); } catch { /* sin gtag */ }
     let cancelled = false;
     const boot = () => {
       const S = (window as any).Stripe;

@@ -2,6 +2,7 @@ import { Editor } from "./Editor.tsx";
 import { ProgressBar } from "./ProgressBar.tsx";
 import { ReuploadForm } from "./ReuploadForm.tsx";
 import { ManualNotice } from "./ManualNotice.tsx";
+import { GaEvent } from "./GaEvent.tsx";
 import type { UIStrings } from "../lib/ui.ts";
 
 export interface TrView {
@@ -68,6 +69,9 @@ export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel = "",
       {tr.status === "DONE" && tr.locked && desbloqueando && (
         <ProgressBar id={tr.id} hasta="unlocked" title={s.unlock_wait_title!} sub={s.unlock_wait_sub!} />
       )}
+
+      {tr.status === "DONE" && <GaEvent nombre="preview_viewed" />}
+      {tr.status === "DONE" && tr.locked && !desbloqueando && <GaEvent nombre="paywall_viewed" />}
 
       {tr.status === "DONE" && tr.locked && !desbloqueando && (
         <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>

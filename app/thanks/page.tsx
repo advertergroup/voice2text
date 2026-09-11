@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { isLocale, DEFAULT_LOCALE, LANG_COOKIE } from "../../src/lib/locale.ts";
 import { ui } from "../../src/lib/ui.ts";
 import { getPrisma } from "../../src/db/client.ts";
+import { getCurrentUser } from "../../src/auth/session.ts";
 import { AdsConversion } from "../../src/ui/AdsConversion.tsx";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +22,10 @@ export default async function Thanks({ searchParams }: { searchParams: Promise<R
   // la escribe /pay/complete tras comprobar pi.status==="succeeded" en Stripe.
   // Importe real ($0.99 u oferta) y PaymentIntent como transaction_id (dedupe).
   // Sin fila (p. ej. ?t= inventado o bots) no se dispara nada.
+  // Email del comprador para conversiones mejoradas (la sesión la acaba de
+  // poner /pay/complete). Sin sesión, la conversión sale igual, solo sin email.
+  const comprador = await getCurrentUser().catch(() => null);
+
   let conv: { value: number; txid: string } | null = null;
   if (sp.t) {
     try {
@@ -33,7 +38,7 @@ export default async function Thanks({ searchParams }: { searchParams: Promise<R
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(180deg,#f7f8fb,#ffffff)", padding: 16 }}>
       <meta httpEquiv="refresh" content={`4;url=${dest}`} />
-      {conv && <AdsConversion value={conv.value} txid={conv.txid} />}
+      {conv && <AdsConversion value={conv.value} txid={conv.txid} email={comprador?.email || ""} />}
       <div className="card" style={{ maxWidth: 440, width: "100%", textAlign: "center", padding: 40 }}>
         <div style={{ fontSize: 46 }}>🎉</div>
         <h1 style={{ fontSize: 26, margin: "12px 0 6px" }}>{s.thanks_title}</h1>

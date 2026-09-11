@@ -74,7 +74,8 @@ export async function LandingFull({ slug }: { slug: string }) {
           <p className="sub">{lp.subtitulo.replaceAll("{brand}", brand)}</p>
           <div style={{ maxWidth: 660, margin: "0 auto", textAlign: "left" }}>
             <Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} quotaLocked={quota} quotaTexts={quotaTexts} quotaCtaHref={quotaCtaHref}
-              s={s} micHref={localePath(locale, "/talk-to-text")} termsHref={localePath(locale, "/terms")} privacyHref={localePath(locale, "/privacy")} />
+              s={s} micHref={localePath(locale, "/talk-to-text")} termsHref={localePath(locale, "/terms")} privacyHref={localePath(locale, "/privacy")}
+              urlAbierta={/tiktok|youtube/.test(slug)} />
           </div>
           <div className="badges" style={{ marginTop: 16, justifyContent: "center", display: "flex" }}><span>{t(c, "hero.formats")}</span></div>
         </div>

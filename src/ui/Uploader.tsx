@@ -23,17 +23,19 @@ const DEF: Record<string, string> = {
  * URL desplegable y micro — todo dentro del mismo cuadro, con fila de iconos
  * abajo y la línea legal debajo. La lógica de subida no cambia.
  */
-export function Uploader({ dropzoneText: _dz, selectText, quotaLocked = false, quotaTexts, quotaCtaHref = "/pay", s, micHref = "/talk-to-text", termsHref: _terms = "/terms", privacyHref: _priv = "/privacy", bare = false }: {
+export function Uploader({ dropzoneText: _dz, selectText, quotaLocked = false, quotaTexts, quotaCtaHref = "/pay", s, micHref = "/talk-to-text", termsHref: _terms = "/terms", privacyHref: _priv = "/privacy", bare = false, urlAbierta = false }: {
   dropzoneText: string; selectText: string; quotaLocked?: boolean; quotaTexts?: QuotaModalTexts; quotaCtaHref?: string;
   s?: UIStrings; micHref?: string; termsHref?: string; privacyHref?: string;
   /** true = sin tarjeta propia ni fila de iconos (va embebido dentro de otra tarjeta, p. ej. bajo el micro). */
   bare?: boolean;
+  /** true = el campo de URL abierto de entrada (landings de TikTok/YouTube: pegar el enlace es la acción principal). */
+  urlAbierta?: boolean;
 }) {
   const tx = (k: string) => (s && s[k]) || DEF[k] || k;
   const [file, setFile] = useState<File | null>(null);
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [urlOpen, setUrlOpen] = useState(false);
+  const [urlOpen, setUrlOpen] = useState(urlAbierta);
   const [err, setErr] = useState("");
   const [showQuota, setShowQuota] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -47,6 +49,7 @@ export function Uploader({ dropzoneText: _dz, selectText, quotaLocked = false, q
     const url = urlRef.current?.value?.trim() || "";
     if (!f && !url) { setErr(""); return; }
     setBusy(true); setErr("");
+    try { (window as any).gtag?.("event", "upload_started"); } catch { /* sin gtag */ }
     const fd = new FormData();
     if (f) {
       const partial = f.size > FULL_MAX_BYTES;

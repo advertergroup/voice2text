@@ -12,14 +12,17 @@ const GADS_LABEL = "AW-18399245321/B8vsCLblo-wcEInouMVE"; // acción "Compra" de
  * Redeclara el stub de gtag porque el layout define el suyo DESPUÉS de
  * {children} en el body; ambos solo hacen push a dataLayer.
  */
-export function AdsConversion({ value, txid, itemId = "unlock-trial", itemName = "Transcription unlock + 7-day trial" }:
-  { value: number; txid: string; itemId?: string; itemName?: string }) {
+export function AdsConversion({ value, txid, itemId = "unlock-trial", itemName = "Transcription unlock + 7-day trial", email = "" }:
+  { value: number; txid: string; itemId?: string; itemName?: string; email?: string }) {
   const v = Number(value) || 0;
   return (
     <script dangerouslySetInnerHTML={{ __html: `
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       (function(){
+        // Conversiones mejoradas: el email del comprador ANTES del evento
+        // (Google lo hashea en el navegador; nunca viaja en claro a terceros).
+        ${email ? `gtag('set', 'user_data', { email: ${JSON.stringify(email)} });` : ""}
         try {
           var k = 'gads_conv_' + ${JSON.stringify(txid)};
           if (localStorage.getItem(k)) return;

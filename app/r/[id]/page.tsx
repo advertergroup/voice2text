@@ -8,6 +8,7 @@ import { Resultado } from "../../../src/ui/Resultado.tsx";
 import { formatPrice } from "../../../src/lib/locale.ts";
 import { ui } from "../../../src/lib/ui.ts";
 import { ANON_COOKIE, esPagado, unlockUser } from "../../../src/lib/funnel.ts";
+import { eventoEmbudo } from "../../../src/lib/embudo.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,12 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   // sondeo, nunca el candado a quien ya pagó.
   const desbloqueando = !!(esPagado(user) && tr.locked && tr.userId === user?.id);
   if (desbloqueando) void unlockUser(user!.id);
+
+  // Embudo: preview vista y, si sigue con candado, muro de pago visto.
+  if (tr.status === "DONE") {
+    void eventoEmbudo("preview_viewed", { trId: tr.id });
+    if (tr.locked && !desbloqueando) void eventoEmbudo("paywall_viewed", { trId: tr.id });
+  }
 
   const plan = await prisma.plan.findFirst({ where: { key: "premium", locale: "es" } });
   const precio = plan ? formatPrice(plan.precioCent, plan.moneda) : "";

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { eventoEmbudo } from "../../../src/lib/embudo.ts";
 import { cookies } from "next/headers";
 import { getPrisma } from "../../../src/db/client.ts";
 import { SESSION_COOKIE, signSession, hashPassword } from "../../../src/auth/core.ts";
@@ -18,6 +19,7 @@ export async function POST(req: Request) {
     return NextResponse.redirect(new URL("/register?error=exists", base), { status: 303 });
   }
   const user = await prisma.user.create({ data: { email, nombre, passwordHash: hashPassword(password), role: "USER" } });
+  void eventoEmbudo("signup");
 
   // Reclama las transcripciones que subió de forma anónima.
   const anon = (await cookies()).get(ANON_COOKIE)?.value;

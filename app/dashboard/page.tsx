@@ -51,7 +51,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       {errMsg && <div className="err" style={{ marginBottom: 16 }}>⚠️ {errMsg}{sp.error === "toobig" && sp.max ? ` (máximo ${sp.max} MB)` : ""}</div>}
       {sp.upgraded && <div className="ok" style={{ marginBottom: 16 }}>✓ {s.up_ok}</div>}
       {/* Upgrade al mensual = la conversión valiosa de verdad; txid estable = sin duplicados al recargar. */}
-      {sp.upgraded && <AdsConversion value={49.99} txid={`up-${user.id}`} itemId="premium-monthly" itemName="Premium monthly plan" />}
+      {sp.upgraded && <AdsConversion value={49.99} txid={`up-${user.id}`} itemId="premium-monthly" itemName="Premium monthly plan" email={user.email} />}
       <div style={{ marginBottom: 30 }}>
         <div className="card" style={{ padding: 24 }}>
           <Uploader dropzoneText={t(c, "hero.dropzone")} selectText={t(c, "hero.selectFiles")} quotaLocked={quota} quotaTexts={quotaTexts} quotaCtaHref={quotaCtaHref}

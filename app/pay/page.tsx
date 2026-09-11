@@ -8,6 +8,7 @@ import { ANON_COOKIE } from "../../src/lib/funnel.ts";
 import { formatPrice, isLocale, DEFAULT_LOCALE, LANG_COOKIE } from "../../src/lib/locale.ts";
 import { ui } from "../../src/lib/ui.ts";
 import { CheckoutForm } from "../../src/ui/CheckoutForm.tsx";
+import { eventoEmbudo } from "../../src/lib/embudo.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,9 @@ export default async function Pay({ searchParams }: { searchParams: Promise<Reco
     accept: pick("exitoffer.accept"),
     decline: pick("exitoffer.decline"),
   } : null;
+
+  // Embudo: checkout abierto.
+  void eventoEmbudo("checkout_started", { trId: tr?.id ?? null });
 
   // PaymentIntent del cargo de hoy (guarda la tarjeta para la suscripción posterior).
   const stripe = await getStripe();

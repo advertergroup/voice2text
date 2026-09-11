@@ -59,6 +59,7 @@ export function MicRecorder({ t, quotaLocked = false, quotaTexts, quotaCtaHref =
     setFase("up"); setErr("");
     const esMp4 = (blobRef.current.type || "").includes("mp4");
     const fd = new FormData();
+    try { (window as any).gtag?.("event", "upload_started"); } catch { /* sin gtag */ }
     fd.append("file", blobRef.current, esMp4 ? "recording.m4a" : "recording.webm");
     fd.append("source", "mic");
     if (lang) fd.append("language", lang); // el idioma de la página como pista (clips cortos confunden al auto-detect)
