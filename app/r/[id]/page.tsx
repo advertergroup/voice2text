@@ -31,10 +31,12 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   const desbloqueando = !!(esPagado(user) && tr.locked && tr.userId === user?.id);
   if (desbloqueando) void unlockUser(user!.id);
 
-  // Embudo: preview vista y, si sigue con candado, muro de pago visto.
+  // Embudo: preview vista y, si sigue con candado, muro de pago visto. Se AWAITA
+  // (no void): eventoEmbudo lee cookies() y, si se deja fire-and-forget al final
+  // del render, esa lectura ocurre fuera del scope de la petición y se pierde.
   if (tr.status === "DONE") {
-    void eventoEmbudo("preview_viewed", { trId: tr.id });
-    if (tr.locked && !desbloqueando) void eventoEmbudo("paywall_viewed", { trId: tr.id });
+    await eventoEmbudo("preview_viewed", { trId: tr.id });
+    if (tr.locked && !desbloqueando) await eventoEmbudo("paywall_viewed", { trId: tr.id });
   }
 
   const plan = await prisma.plan.findFirst({ where: { key: "premium", locale: "es" } });
