@@ -9,6 +9,7 @@ import { localePath, DEFAULT_LOCALE } from "../lib/locale.ts";
 import { ui } from "../lib/ui.ts";
 import { ANON_COOKIE, esPagado, quotaAgotada } from "../lib/funnel.ts";
 import { Pasos, Caracteristicas, Modos } from "./Secciones.tsx";
+import { alternativasHreflang } from "../lib/landing-groups.ts";
 
 /**
  * Plantilla COMPLETA de landing (calco funcional de la home): hero con el
@@ -36,11 +37,12 @@ export async function landingMetadata(slug: string) {
   if (!lp) return {};
   const c = await loadContent(locale);
   const brand = t(c, "brand.name");
+  // hreflang entre las versiones del mismo ángulo (audio/mp3/youtube/tiktok).
+  const languages = alternativasHreflang(slug) || undefined;
   return {
     title: `${lp.titulo} — ${brand}`,
     description: lp.metaDesc.replaceAll("{brand}", brand),
-    // Canonical de la propia landing en su idioma (sirve para todas las /l/).
-    alternates: { canonical: localePath(locale, `/l/${slug}`) },
+    alternates: { canonical: localePath(locale, `/l/${slug}`), languages },
   };
 }
 
