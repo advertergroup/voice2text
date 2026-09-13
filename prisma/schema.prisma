@@ -75,6 +75,7 @@ model Transcription {
   origen      String?     // "ads" si la subida vino de tráfico de Google Ads (cookie v2t_src)
   utmCampaign String?     // primer toque (cookie v2t_attr): campaña y keyword de Ads
   utmTerm     String?
+  uiLocale    String?     // idioma de la interfaz al subir (para emails de recuperación localizados)
   language    String      @default("auto")
   mode        TransMode   @default(STANDARD)
   status      TransStatus @default(QUEUED)
