@@ -15,11 +15,11 @@ const nextConfig = {
       { source: "/audio-to-text", destination: "/en/l/audio-to-text", statusCode: 301 },
       { source: "/mp3/to-text", destination: "/en/l/mp3-to-text", statusCode: 301 },
       { source: "/mp3-to-text", destination: "/en/l/mp3-to-text", statusCode: 301 },
-      // ES
-      { source: "/audio/a-texto", destination: "/es/l/audio-a-texto", statusCode: 301 },
-      { source: "/mp3/a-texto", destination: "/es/l/mp3-a-texto", statusCode: 301 },
-      { source: "/youtube/a-texto", destination: "/es/l/youtube-a-texto", statusCode: 301 },
-      { source: "/tiktok/a-texto", destination: "/es/l/tiktok-a-texto", statusCode: 301 },
+      // ES (idioma por defecto → SIN prefijo /es)
+      { source: "/audio/a-texto", destination: "/l/audio-a-texto", statusCode: 301 },
+      { source: "/mp3/a-texto", destination: "/l/mp3-a-texto", statusCode: 301 },
+      { source: "/youtube/a-texto", destination: "/l/youtube-a-texto", statusCode: 301 },
+      { source: "/tiktok/a-texto", destination: "/l/tiktok-a-texto", statusCode: 301 },
       // IT
       { source: "/audio/in-testo", destination: "/it/l/audio-in-testo", statusCode: 301 },
       { source: "/mp3/in-testo", destination: "/it/l/mp3-in-testo", statusCode: 301 },
