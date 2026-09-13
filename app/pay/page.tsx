@@ -9,6 +9,7 @@ import { formatPrice, isLocale, DEFAULT_LOCALE, LANG_COOKIE } from "../../src/li
 import { ui } from "../../src/lib/ui.ts";
 import { CheckoutForm } from "../../src/ui/CheckoutForm.tsx";
 import { eventoEmbudo } from "../../src/lib/embudo.ts";
+import { precioPara } from "../../src/lib/precio.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -33,9 +34,10 @@ export default async function Pay({ searchParams }: { searchParams: Promise<Reco
     if (!owns) tr = null;
   }
 
-  const plan = await prisma.plan.findFirst({ where: { key: "premium", locale: "es" } });
-  const monthlyLabel = plan ? formatPrice(plan.precioCent, plan.moneda) : "$49.90";
-  const todayLabel = formatPrice(TRIPWIRE_CENTS, "USD");
+  // Precio por idioma (fuente única). /es /it /de → EUR; /en → USD.
+  const P = precioPara(locale);
+  const monthlyLabel = P.monthlyLabel;
+  const todayLabel = P.todayLabel;
 
   // Textos del checkout editables (versión normal o Google Ads según la cookie v2t_src).
   const cont = await loadContent(locale);
@@ -54,7 +56,7 @@ export default async function Pay({ searchParams }: { searchParams: Promise<Reco
   // Oferta de salida (exit-intent): precio menor hoy si va a abandonar.
   const eoPrice = parseInt(cont["exitoffer.price"] || "0", 10);
   const exitOffer = (cont["exitoffer.enabled"] === "1" && eoPrice > 0 && eoPrice < TRIPWIRE_CENTS) ? {
-    label: formatPrice(eoPrice, "USD"),
+    label: formatPrice(eoPrice, P.currency),
     title: pick("exitoffer.title"),
     text: pick("exitoffer.text"),
     accept: pick("exitoffer.accept"),
@@ -67,14 +69,14 @@ export default async function Pay({ searchParams }: { searchParams: Promise<Reco
   // PaymentIntent del cargo de hoy (guarda la tarjeta para la suscripción posterior).
   const stripe = await getStripe();
   const pi = await stripe.paymentIntents.create({
-    amount: TRIPWIRE_CENTS,
-    currency: "usd",
+    amount: P.trialCents,
+    currency: P.currency.toLowerCase(),
     // Solo tarjeta ("card" YA incluye Apple Pay y Google Pay por monedero).
     // Motivo medido en SnapPassport: Link mete un intermediario que rompe
     // cobros que la tarjeta sola aprueba (39/39 partner_insufficient_funds y
     // 30/30 generic_payment_failed eran Link).
     payment_method_types: ["card"],
-    metadata: { transcriptionId: tr?.id || "", anonSession: tr?.anonSession || "", userId: user?.id || "", gclid: jar.get("v2t_gclid")?.value?.slice(0, 120) || "" },
+    metadata: { transcriptionId: tr?.id || "", anonSession: tr?.anonSession || "", userId: user?.id || "", gclid: jar.get("v2t_gclid")?.value?.slice(0, 120) || "", locale, currency: P.currency },
   });
 
   return (

@@ -7,6 +7,7 @@ import { ANON_COOKIE, unlockUser } from "../../../src/lib/funnel.ts";
 import { registrarEvento } from "../../../src/lib/eventos.ts";
 import { parseAttr } from "../../../src/lib/attr.ts";
 import { sendMail } from "../../../src/lib/mailer.ts";
+import { stripePriceId } from "../../../src/lib/precio.ts";
 import { randomUUID } from "node:crypto";
 
 const esc = (s: string) => s.replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]!));
@@ -49,10 +50,11 @@ export async function GET(req: Request) {
     try {
       // La tarjeta usada hoy queda como predeterminada para el cobro tras la prueba.
       await stripe.customers.update(customerId, { invoice_settings: { default_payment_method: pmId } }).catch(() => {});
-      const plan = await prisma.plan.findFirst({ where: { key: "premium", locale: "es" } });
+      // La suscripción se factura en la MISMA moneda del cobro de hoy (EUR o USD).
+      const priceMensual = stripePriceId(pi.currency) || (await prisma.plan.findFirst({ where: { key: "premium", locale: "es" } }))?.stripePriceId!;
       const sub = await stripe.subscriptions.create({
         customer: customerId,
-        items: [{ price: plan?.stripePriceId! }],
+        items: [{ price: priceMensual }],
         trial_period_days: TRIAL_DAYS,
         default_payment_method: pmId,
         metadata: { userId: user.id },

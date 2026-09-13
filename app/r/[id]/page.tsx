@@ -5,7 +5,7 @@ import { getCurrentUser } from "../../../src/auth/session.ts";
 import { getPrisma } from "../../../src/db/client.ts";
 import { LanguageSwitcher } from "../../../src/ui/site.tsx";
 import { Resultado } from "../../../src/ui/Resultado.tsx";
-import { formatPrice } from "../../../src/lib/locale.ts";
+import { precioPara } from "../../../src/lib/precio.ts";
 import { ui } from "../../../src/lib/ui.ts";
 import { ANON_COOKIE, esPagado, unlockUser } from "../../../src/lib/funnel.ts";
 import { eventoEmbudo } from "../../../src/lib/embudo.ts";
@@ -40,9 +40,10 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   }
 
   const plan = await prisma.plan.findFirst({ where: { key: "premium", locale: "es" } });
-  const precio = plan ? formatPrice(plan.precioCent, plan.moneda) : "";
+  const P = precioPara(locale);
+  const precio = P.monthlyLabel;
   const trialDays = Number(process.env.TRIAL_DAYS || 7);
-  const todayLabel = formatPrice(Number(process.env.TRIPWIRE_CENTS || 99), "USD");
+  const todayLabel = P.todayLabel;
   const s = ui(locale);
 
   return (

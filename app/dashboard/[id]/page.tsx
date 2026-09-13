@@ -4,7 +4,7 @@ import { getCurrentUser } from "../../../src/auth/session.ts";
 import { getPrisma } from "../../../src/db/client.ts";
 import { AppShell } from "../../../src/ui/AppShell.tsx";
 import { Resultado } from "../../../src/ui/Resultado.tsx";
-import { formatPrice } from "../../../src/lib/locale.ts";
+import { precioPara } from "../../../src/lib/precio.ts";
 import { ui } from "../../../src/lib/ui.ts";
 import { esPagado, unlockUser } from "../../../src/lib/funnel.ts";
 
@@ -25,10 +25,10 @@ export default async function Detalle({ params }: { params: Promise<{ id: string
   const desbloqueando = !!(esPagado(user) && tr.locked);
   if (desbloqueando) void unlockUser(user.id);
 
-  const plan = await prisma.plan.findFirst({ where: { key: "premium", locale: "es" } });
-  const precio = plan ? formatPrice(plan.precioCent, plan.moneda) : "";
+  const P = precioPara(locale);
+  const precio = P.monthlyLabel;
   const trialDays = Number(process.env.TRIAL_DAYS || 7);
-  const todayLabel = formatPrice(Number(process.env.TRIPWIRE_CENTS || 99), "USD");
+  const todayLabel = P.todayLabel;
 
   return (
     <AppShell brand={t(c, "brand.name")} email={user.email} role={user.role} active="dash">

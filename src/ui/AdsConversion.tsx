@@ -12,9 +12,10 @@ const GADS_LABEL = "AW-18399245321/B8vsCLblo-wcEInouMVE"; // acción "Compra" de
  * Redeclara el stub de gtag porque el layout define el suyo DESPUÉS de
  * {children} en el body; ambos solo hacen push a dataLayer.
  */
-export function AdsConversion({ value, txid, itemId = "unlock-trial", itemName = "Transcription unlock + 7-day trial", email = "" }:
-  { value: number; txid: string; itemId?: string; itemName?: string; email?: string }) {
+export function AdsConversion({ value, txid, currency = "USD", itemId = "unlock-trial", itemName = "Transcription unlock + 7-day trial", email = "" }:
+  { value: number; txid: string; currency?: string; itemId?: string; itemName?: string; email?: string }) {
   const v = Number(value) || 0;
+  const cur = /^[A-Z]{3}$/.test(currency) ? currency : "USD";
   return (
     <script dangerouslySetInnerHTML={{ __html: `
       window.dataLayer = window.dataLayer || [];
@@ -31,13 +32,13 @@ export function AdsConversion({ value, txid, itemId = "unlock-trial", itemName =
         gtag('event', 'conversion', {
           'send_to': ${JSON.stringify(GADS_LABEL)},
           'value': ${v},
-          'currency': 'USD',
+          'currency': ${JSON.stringify(cur)},
           'transaction_id': ${JSON.stringify(txid)}
         });
         gtag('event', 'purchase', {
           'transaction_id': ${JSON.stringify(txid)},
           'value': ${v},
-          'currency': 'USD',
+          'currency': ${JSON.stringify(cur)},
           'items': [{ 'item_id': ${JSON.stringify(itemId)}, 'item_name': ${JSON.stringify(itemName)}, 'price': ${v}, 'quantity': 1 }]
         });
       })();
