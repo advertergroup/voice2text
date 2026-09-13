@@ -20,6 +20,7 @@ export const LOCALES: LocaleInfo[] = [
   { code: "it", label: "Italiano",   native: "Italiano",   flag: "🇮🇹" },
   { code: "nl", label: "Nederlands", native: "Nederlands", flag: "🇳🇱" },
   { code: "pl", label: "Polski",     native: "Polski",     flag: "🇵🇱" },
+  { code: "el", label: "Ελληνικά",   native: "Ελληνικά",   flag: "🇬🇷" },
 ];
 
 export const LOCALE_CODES = LOCALES.map((l) => l.code);

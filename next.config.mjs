@@ -30,6 +30,16 @@ const nextConfig = {
       { source: "/mp3/in-text", destination: "/de/l/mp3-in-text", statusCode: 301 },
       { source: "/youtube/in-text", destination: "/de/l/youtube-in-text", statusCode: 301 },
       { source: "/tiktok/in-text", destination: "/de/l/tiktok-in-text", statusCode: 301 },
+      // PL
+      { source: "/audio/na-tekst", destination: "/pl/l/audio-na-tekst", statusCode: 301 },
+      { source: "/mp3/na-tekst", destination: "/pl/l/mp3-na-tekst", statusCode: 301 },
+      { source: "/youtube/na-tekst", destination: "/pl/l/youtube-na-tekst", statusCode: 301 },
+      { source: "/tiktok/na-tekst", destination: "/pl/l/tiktok-na-tekst", statusCode: 301 },
+      // EL (Grecia)
+      { source: "/audio/se-keimeno", destination: "/el/l/audio-se-keimeno", statusCode: 301 },
+      { source: "/mp3/se-keimeno", destination: "/el/l/mp3-se-keimeno", statusCode: 301 },
+      { source: "/youtube/se-keimeno", destination: "/el/l/youtube-se-keimeno", statusCode: 301 },
+      { source: "/tiktok/se-keimeno", destination: "/el/l/tiktok-se-keimeno", statusCode: 301 },
     ];
   },
 };
