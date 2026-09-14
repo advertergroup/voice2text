@@ -41,7 +41,7 @@ function Sidebar({ ctaHref, s }: { ctaHref: string; s: UIStrings }) {
 }
 
 /** Vista de una transcripción: procesando / error / preview bloqueada (paywall + sidebar) / completa. */
-export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel = "", s, desbloqueando = false }: { tr: TrView; s: UIStrings; precio?: string; ctaHref: string; trialDays?: number; todayLabel?: string; desbloqueando?: boolean }) {
+export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel = "", s, desbloqueando = false, blurPreview = true }: { tr: TrView; s: UIStrings; precio?: string; ctaHref: string; trialDays?: number; todayLabel?: string; desbloqueando?: boolean; blurPreview?: boolean }) {
   const procesando = tr.status === "PROCESSING" || tr.status === "QUEUED";
   // En el candado, el botón va SIN precio (el importe se ve con todo detalle en
   // el checkout antes de pagar). Se recorta el « — {today}» final en cualquier
@@ -85,7 +85,17 @@ export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel = "",
       {tr.status === "DONE" && tr.locked && !desbloqueando && (
         <div style={{ display: "flex", gap: 20, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 300 }}>
-            {tr.preview && <div className="card" style={{ padding: 22, fontSize: 15.5, lineHeight: 1.75, whiteSpace: "pre-wrap" }}>{tr.preview}</div>}
+            {/* Preview real. Con blurPreview (por defecto) va PIXELADA y sin poder
+                seleccionarse: se ve que la transcripción existe pero no se lee
+                gratis (elimina la duda "con 25 s le basta"). Para el A/B futuro,
+                preview.blur="0" en el contenido la vuelve legible (control). */}
+            {tr.preview && (
+              <div className="card" aria-hidden={blurPreview || undefined}
+                style={{ padding: 22, fontSize: 15.5, lineHeight: 1.75, whiteSpace: "pre-wrap",
+                  ...(blurPreview ? { filter: "blur(6px)", userSelect: "none", pointerEvents: "none" } : {}) }}>
+                {tr.preview}
+              </div>
+            )}
 
             <div style={{ position: "relative", marginTop: 14, minHeight: 340 }}>
               <div aria-hidden style={{ filter: "blur(6px)", userSelect: "none", pointerEvents: "none", padding: "8px 4px" }}>

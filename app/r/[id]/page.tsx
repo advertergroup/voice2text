@@ -45,6 +45,8 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
   const trialDays = Number(process.env.TRIAL_DAYS || 7);
   const todayLabel = P.todayLabel;
   const s = ui(locale);
+  // Preview pixelada por defecto; preview.blur="0" la vuelve legible (control del A/B futuro).
+  const blurPreview = (c["preview.blur"] ?? "") !== "0";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -59,7 +61,7 @@ export default async function ResultPage({ params }: { params: Promise<{ id: str
 
       <section style={{ flex: 1, paddingTop: 26, paddingBottom: 40 }}>
         <div className="container" style={{ maxWidth: 900 }}>
-          <Resultado tr={tr as any} s={s} precio={precio} ctaHref={`/pay?t=${tr.id}`} trialDays={trialDays} todayLabel={todayLabel} desbloqueando={desbloqueando} />
+          <Resultado tr={tr as any} s={s} precio={precio} ctaHref={`/pay?t=${tr.id}`} trialDays={trialDays} todayLabel={todayLabel} desbloqueando={desbloqueando} blurPreview={blurPreview} />
         </div>
       </section>
 

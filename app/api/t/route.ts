@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { registrarEvento, RE_BOT } from "../../../src/lib/eventos.ts";
+import { registrarEvento, RE_BOT, type TipoEvento } from "../../../src/lib/eventos.ts";
 
 export const runtime = "nodejs";
 
@@ -31,7 +31,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  if (tipo === "offer_shown" || tipo === "click" || tipo === "engagement") {
+  // Micro-eventos del checkout: mismo beacon público (identidad por cookie, bots e internos fuera).
+  const microCheckout = tipo === "card_focused" || tipo === "wallet_clicked" || tipo === "pay_clicked";
+
+  if (tipo === "offer_shown" || tipo === "click" || tipo === "engagement" || microCheckout) {
     const ua = req.headers.get("user-agent") || "";
     if (RE_BOT.test(ua)) return NextResponse.json({ ok: true });
     const jar = await cookies();
@@ -43,6 +46,8 @@ export async function POST(req: Request) {
 
     if (tipo === "offer_shown") {
       await registrarEvento({ tipo: "offer_shown", vid, origen, path: "/pay" });
+    } else if (microCheckout) {
+      await registrarEvento({ tipo: tipo as TipoEvento, vid, origen, path: "/pay" });
     } else if (tipo === "click") {
       const el = typeof body.el === "string" ? body.el.slice(0, 90) : "";
       await registrarEvento({

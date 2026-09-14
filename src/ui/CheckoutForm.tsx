@@ -27,9 +27,19 @@ export function CheckoutForm(props: {
   const emailRef = useRef(prefillEmail || "");         // el confirm del monedero corre en un closure viejo
   const peMounted = useRef(false);
   const offerDone = useRef(false); // ya mostrada o aceptada → no repetir
+  const diagHecho = useRef<Set<string>>(new Set()); // micro-eventos ya enviados (uno por tipo)
 
   const vars = { today, price: monthlyLabel, n: String(trialDays) };
   const B = "#4f46e5";
+
+  // Diagnóstico del embudo dentro del checkout: ¿enfoca la tarjeta, toca el
+  // monedero, pulsa pagar? Beacon a /api/t (bots e internos se filtran allí).
+  // Una vez por tipo y carga; nunca bloquea el pago.
+  const diag = (tipo: "card_focused" | "wallet_clicked" | "pay_clicked") => {
+    if (diagHecho.current.has(tipo)) return;
+    diagHecho.current.add(tipo);
+    try { fetch("/api/t", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ tipo }), keepalive: true }).catch(() => {}); } catch { /* nunca rompe */ }
+  };
 
   useEffect(() => {
     try { (window as any).gtag?.("event", "checkout_started"); } catch { /* sin gtag */ }
@@ -52,6 +62,9 @@ export function CheckoutForm(props: {
       const ece = elements.create("expressCheckout", { emailRequired: true, paymentMethods: { link: "never" } });
       ece.mount("#express-checkout");
       ece.on("ready", (ev: any) => { if (!cancelled && ev?.availablePaymentMethods) setWallet(true); });
+      // Monedero pulsado (diagnóstico). OBLIGATORIO ev.resolve() o la hoja de
+      // pago no abre; se llama síncrono, el beacon va aparte y no lo bloquea.
+      ece.on("click", (ev: any) => { diag("wallet_clicked"); ev.resolve(); });
       ece.on("confirm", async (ev: any) => {
         // El email lo da la hoja del monedero (emailRequired); si no, el campo.
         const mail = ev?.billingDetails?.email || emailRef.current || "";
@@ -65,6 +78,7 @@ export function CheckoutForm(props: {
       });
       const pe = elements.create("payment", { layout: "tabs" });
       pe.mount("#payment-element");
+      pe.on("focus", () => diag("card_focused")); // ¿llega a tocar la tarjeta? (diagnóstico)
       peMounted.current = true;
       if (!cancelled) setReady(true);
     };
@@ -102,6 +116,7 @@ export function CheckoutForm(props: {
 
   const pay = async (e: React.FormEvent) => {
     e.preventDefault();
+    diag("pay_clicked"); // botón pulsado (aunque falte el email): mide intención real
     if (!stripeRef.current || !elementsRef.current || busy) return;
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setErr(s.email_invalid!); return; }
     setBusy(true); setErr("");

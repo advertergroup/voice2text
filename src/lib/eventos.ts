@@ -10,7 +10,10 @@ import { getPrisma } from "../db/client.ts";
 
 export const TIPOS_EVENTO = ["pageview", "offer_shown", "offer_accepted", "purchase", "upgrade", "click", "engagement",
   // Embudo fino (session_id=vid, meta={gclid,term}): para importar en Ads como conversiones secundarias.
-  "upload_started", "preview_viewed", "paywall_viewed", "signup", "checkout_started"] as const;
+  "upload_started", "preview_viewed", "paywall_viewed", "signup", "checkout_started",
+  // Diagnóstico DENTRO del checkout: ¿enfoca la tarjeta, toca el monedero, pulsa pagar?
+  // Separa "tráfico que no iba a pagar" de "oferta que no convence" (ver 09-15).
+  "card_focused", "wallet_clicked", "pay_clicked"] as const;
 export type TipoEvento = (typeof TIPOS_EVENTO)[number];
 
 /** Bots/monitores: sus visitas no cuentan. */
