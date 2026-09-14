@@ -116,7 +116,6 @@ export function CheckoutForm(props: {
 
   const pay = async (e: React.FormEvent) => {
     e.preventDefault();
-    diag("pay_clicked"); // botón pulsado (aunque falte el email): mide intención real
     if (!stripeRef.current || !elementsRef.current || busy) return;
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setErr(s.email_invalid!); return; }
     setBusy(true); setErr("");
@@ -152,7 +151,7 @@ export function CheckoutForm(props: {
           <div id="payment-element" style={{ minHeight: 40 }} />
           {!ready && <div style={{ color: "#94a3b8", fontSize: 14, padding: "10px 0" }}>{s.loading_pay}</div>}
           {err && <div style={{ color: "#dc2626", fontSize: 14, marginTop: 12 }}>{err}</div>}
-          <button type="submit" disabled={!ready || busy}
+          <button type="submit" disabled={!ready || busy} onClick={() => diag("pay_clicked")}
             style={{ width: "100%", marginTop: 18, padding: "15px 18px", border: 0, borderRadius: 12, background: busy ? "#94a3b8" : "linear-gradient(135deg,#4f46e5,#7c3aed)", color: "#fff", fontWeight: 800, fontSize: 16, cursor: busy ? "default" : "pointer", boxShadow: "0 10px 24px rgba(79,70,229,.28)" }}>
             {busy ? s.processing : f(textos.button || s.cta!, vars)}
           </button>
