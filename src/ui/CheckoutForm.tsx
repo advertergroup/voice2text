@@ -77,7 +77,10 @@ export function CheckoutForm(props: {
         const { error } = await stripe.confirmPayment({ elements, confirmParams: { return_url: returnUrl, receipt_email: mail || undefined } });
         if (error) setErr(mensajeDeRechazo(error, locale)); // por qué falló + qué hacer, no el genérico de Stripe
       });
-      const pe = elements.create("payment", { layout: "tabs" });
+      // terms.card="never": ya damos NUESTRO desglose de suscripción (precio de
+      // hoy, prueba, renovación, periodicidad + enlaces) bajo el botón; el
+      // mandato que Stripe añade solo duplica y confunde. Baja disputas.
+      const pe = elements.create("payment", { layout: "tabs", terms: { card: "never" } });
       pe.mount("#payment-element");
       pe.on("focus", () => diag("card_focused")); // ¿llega a tocar la tarjeta? (diagnóstico)
       peMounted.current = true;

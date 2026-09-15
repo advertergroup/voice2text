@@ -28,5 +28,8 @@ export async function POST(req: Request) {
   await stripe.paymentIntents.update(paymentIntentId, { amount: price, metadata: { ...(pi.metadata || {}), offerAccepted: "1" } });
   const jar = await cookies();
   await registrarEvento({ tipo: "offer_accepted", vid: jar.get("v2t_vid")?.value, origen: jar.get("v2t_src")?.value, valorCent: price, meta: paymentIntentId, path: "/pay" });
-  return NextResponse.json({ ok: true, label: formatPrice(price, "USD") });
+  // La etiqueta va en la MONEDA REAL del PaymentIntent (lo que se cobra), no
+  // fija en USD: un usuario EUR veía "$0,50" y se le cobraba 0,50 € → cargo que
+  // no reconoce. `pi.currency` es "eur"/"usd".
+  return NextResponse.json({ ok: true, label: formatPrice(price, pi.currency.toUpperCase()) });
 }
