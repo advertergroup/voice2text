@@ -89,6 +89,7 @@ export default async function Pay({ searchParams }: { searchParams: Promise<Reco
       transcriptionId={tr?.id || ""}
       prefillEmail={user?.email || ""}
       s={ui(locale)}
+      locale={locale}
       textos={textos}
       exitOffer={exitOffer}
       brand={cont["brand.name"] || "Voice To Text"}

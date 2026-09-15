@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { UIStrings } from "../lib/ui.ts";
+import { mensajeDeRechazo } from "../lib/rechazo-pago.ts";
 
 const f = (str: string, vars: Record<string, string>) => Object.keys(vars).reduce((a, k) => a.replaceAll(`{${k}}`, vars[k]!), str);
 
@@ -9,12 +10,12 @@ type ExitOffer = { label: string; title: string; text: string; accept: string; d
 // Checkout propio embebido (Stripe Payment Element) con los colores de marca. Sin nav ni salidas + oferta de salida.
 export function CheckoutForm(props: {
   clientSecret: string; pk: string; todayLabel: string; monthlyLabel: string; trialDays: number;
-  transcriptionId: string; prefillEmail: string; s: UIStrings;
+  transcriptionId: string; prefillEmail: string; s: UIStrings; locale: string;
   textos: { subtitle: string; button: string; legal: string; secure: string };
   exitOffer: ExitOffer;
   brand?: string;
 }) {
-  const { clientSecret, pk, todayLabel, monthlyLabel, trialDays, transcriptionId, prefillEmail, s, textos, exitOffer, brand = "Voice To Text" } = props;
+  const { clientSecret, pk, todayLabel, monthlyLabel, trialDays, transcriptionId, prefillEmail, s, locale, textos, exitOffer, brand = "Voice To Text" } = props;
   const [email, setEmail] = useState(prefillEmail || "");
   const [today, setToday] = useState(todayLabel);      // precio de hoy (baja si acepta la oferta)
   const [showOffer, setShowOffer] = useState(false);
@@ -74,7 +75,7 @@ export function CheckoutForm(props: {
         }
         const returnUrl = `${window.location.origin}/pay/complete?t=${encodeURIComponent(transcriptionId)}`;
         const { error } = await stripe.confirmPayment({ elements, confirmParams: { return_url: returnUrl, receipt_email: mail || undefined } });
-        if (error) setErr(error.message || s.pay_error!);
+        if (error) setErr(mensajeDeRechazo(error, locale)); // por qué falló + qué hacer, no el genérico de Stripe
       });
       const pe = elements.create("payment", { layout: "tabs" });
       pe.mount("#payment-element");
@@ -123,7 +124,7 @@ export function CheckoutForm(props: {
     await fetch("/api/pay/prepare", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ paymentIntentId: piId, email }) }).catch(() => {});
     const returnUrl = `${window.location.origin}/pay/complete?t=${encodeURIComponent(transcriptionId)}`;
     const { error } = await stripeRef.current.confirmPayment({ elements: elementsRef.current, confirmParams: { return_url: returnUrl, receipt_email: email } });
-    if (error) { setErr(error.message || s.pay_error!); setBusy(false); }
+    if (error) { setErr(mensajeDeRechazo(error, locale)); setBusy(false); }
   };
 
   return (
