@@ -10,13 +10,6 @@ import { Pasos, Caracteristicas, Modos } from "../src/ui/Secciones.tsx";
 
 export const dynamic = "force-dynamic";
 
-const UPERR: Record<string, string> = {
-  nofile: "Sube un archivo o pega una URL.",
-  badtype: "Ese archivo no es un audio o vídeo válido (MP3, WAV, M4A, MP4, MOV, MKV…).",
-  toobig: "El archivo es demasiado grande.",
-  infected: "El archivo se ha rechazado por seguridad.",
-  limit: "Has hecho varias pruebas seguidas. Espera un momento e inténtalo de nuevo.",
-};
 
 export default async function Home({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
   const sp = await searchParams;
@@ -24,14 +17,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   const c = await loadContent(locale);
   const user = await getCurrentUser();
   const reg = user ? "/dashboard" : localePath(locale, "/register");
-  const uperr = sp.uperr && sp.uperr !== "quota" ? (UPERR[sp.uperr] || "No se pudo procesar la subida.") : null;
+  const s = ui(locale);
+  const uperr = sp.uperr && sp.uperr !== "quota" ? (s["err_" + sp.uperr] || s.err_generic) : null;
 
   // Cuota: gratis y prueba de 7 días = 1 transcripción; ilimitadas solo con el plan mensual ACTIVO.
   const anon = (await cookies()).get(ANON_COOKIE)?.value ?? null;
   // El modal de cuota es SOLO para el trial pagado (upsell al mensual); antes de pagar no hay límite.
   const quota = esPagado(user) && user?.subStatus !== "ACTIVE" && await quotaAgotada(user?.id ?? null, anon);
   const quotaCtaHref = esPagado(user) ? "/api/account/upgrade" : "/pay";
-  const s = ui(locale);
   const quotaTexts = { title: s.quota_title!, desc: s.quota_desc!, cta: s.quota_cta!, later: s.quota_later! };
 
 

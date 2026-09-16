@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { t } from "../lib/content.ts";
 import { LOCALES, localePath, localeInfo, DEFAULT_LOCALE } from "../lib/locale.ts";
 import { I18N_LANDINGS } from "../lib/translations.generated.ts";
+import { ui } from "../lib/ui.ts";
 
 type C = Record<string, string>;
 
@@ -45,7 +46,7 @@ export function Nav({ c, user, locale = DEFAULT_LOCALE }: { c: C; user?: { email
           {/* @ts-expect-error Async Server Component */}
           <LanguageSwitcher locale={locale} />
           {user ? (
-            <a href="/dashboard" className="btn btn-primary">Mi panel</a>
+            <a href="/dashboard" className="btn btn-primary">{ui(locale).nav_dashboard}</a>
           ) : (
             <>
               <a href={lp("/login")} className="muted" style={{ fontWeight: 600 }}>{t(c, "nav.login")}</a>

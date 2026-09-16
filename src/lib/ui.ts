@@ -71,6 +71,19 @@ export const UI_ES: UIStrings = {
   unlock_wait_sub: "Estamos transcribiendo el texto completo. En unos segundos aparecerá aquí solo.",
   up_fast_hint: "Transcripción IA rápida", up_langs_hint: "Más de 90 idiomas",
   up_url_hint: "Pegar una URL", up_mic_hint: "Graba con tu micrófono",
+  // Precios / panel / cuenta / home (antes literales en los componentes)
+  pr_badge_trial: "Prueba {today}", pr_trial_line: "{today} los primeros {n} días, luego {price}/{per}",
+  pr_err_pay: "⚠️ No se pudo iniciar el pago. Inténtalo de nuevo en unos minutos.", pr_err_config: "⚠️ Este plan aún no está disponible para pago. Vuelve a intentarlo pronto.",
+  per_month: "mes", per_year: "año",
+  dash_new: "Nueva transcripción", dash_mine: "Mis transcripciones", dash_empty: "Aún no tienes transcripciones. Sube tu primer audio o vídeo arriba.",
+  th_title: "Título", th_lang: "Idioma", th_mode: "Modo", th_status: "Estado", th_date: "Fecha", open: "Abrir →",
+  st_done: "Lista", st_proc: "Procesando", st_manual: "⏳ En proceso · <24h", st_queued: "En cola", st_err: "Error",
+  err_nofile: "Sube un archivo o pega una URL.", err_badtype: "Ese archivo no es un audio o vídeo válido. Formatos aceptados: MP3, WAV, M4A, AAC, OGG, MP4, MOV, MKV, WEBM…",
+  err_toobig: "El archivo es demasiado grande.", err_max: "(máximo {max} MB)", err_infected: "El archivo se ha rechazado por seguridad: el antivirus detectó una amenaza.",
+  err_limit: "Has hecho varias pruebas seguidas. Espera un momento e inténtalo de nuevo.",
+  acct_cancel_err: "✗ No se pudo cancelar. Escríbenos a {email}.",
+  back: "← Volver", logout: "Cerrar sesión", export_label: "Exportar:", nav_dashboard: "Mi panel", side_dash: "🏠 Mis transcripciones", side_new: "➕ Nueva", side_account: "👤 Mi cuenta", side_admin: "⚙️ Administración", ed_saved: "Guardado ✓", ed_saving: "Guardando…", ed_copy: "Copiar", ed_copied: "¡Copiado!", err_generic: "No se pudo procesar la subida.",
+  tt_meta_title: "Hablar a Texto — Dicta con tu voz y conviértela en texto", tt_meta_desc: "Convierte tu voz en texto al instante: pulsa el micrófono, habla y exporta la transcripción en TXT, DOCX, PDF o SRT. Más de 90 idiomas, funciona en el navegador.",
 };
 
 export const UI_EN: UIStrings = {
@@ -141,6 +154,19 @@ export const UI_EN: UIStrings = {
   unlock_wait_sub: "We're transcribing the full text. It will appear here by itself in a few seconds.",
   up_fast_hint: "Fast AI transcription", up_langs_hint: "90+ languages",
   up_url_hint: "Paste a URL", up_mic_hint: "Record with your microphone",
+  // Pricing / dashboard / account / home (formerly hard-coded in components)
+  pr_badge_trial: "Trial {today}", pr_trial_line: "{today} for the first {n} days, then {price}/{per}",
+  pr_err_pay: "⚠️ We couldn't start the payment. Please try again in a few minutes.", pr_err_config: "⚠️ This plan isn't available for payment yet. Please try again soon.",
+  per_month: "month", per_year: "year",
+  dash_new: "New transcription", dash_mine: "My transcriptions", dash_empty: "You don't have any transcriptions yet. Upload your first audio or video above.",
+  th_title: "Title", th_lang: "Language", th_mode: "Mode", th_status: "Status", th_date: "Date", open: "Open →",
+  st_done: "Ready", st_proc: "Processing", st_manual: "⏳ In progress · <24h", st_queued: "Queued", st_err: "Error",
+  err_nofile: "Upload a file or paste a URL.", err_badtype: "That file isn't a valid audio or video. Accepted formats: MP3, WAV, M4A, AAC, OGG, MP4, MOV, MKV, WEBM…",
+  err_toobig: "The file is too large.", err_max: "(max {max} MB)", err_infected: "The file was rejected for security reasons: the antivirus detected a threat.",
+  err_limit: "You've made several attempts in a row. Wait a moment and try again.",
+  acct_cancel_err: "✗ We couldn't cancel. Write to us at {email}.",
+  back: "← Back", logout: "Log out", export_label: "Export:", nav_dashboard: "My dashboard", side_dash: "🏠 My transcriptions", side_new: "➕ New", side_account: "👤 My account", side_admin: "⚙️ Admin", ed_saved: "Saved ✓", ed_saving: "Saving…", ed_copy: "Copy", ed_copied: "Copied!", err_generic: "The upload couldn't be processed.",
+  tt_meta_title: "Talk to Text — Speak & Convert Your Voice to Text Online", tt_meta_desc: "Talk to text online: tap the mic, speak, and get an instant transcription. Export as TXT, DOCX, PDF or SRT. 90+ languages, works in your browser.",
 };
 
 /** Devuelve los textos de UI para un idioma (fallback a inglés). */
@@ -148,4 +174,9 @@ export function ui(locale: string): UIStrings {
   if (locale === "es") return UI_ES;
   if (locale === "en") return UI_EN;
   return { ...UI_EN, ...(UI_TRANSLATIONS[locale] || {}) };
+}
+
+/** Sustituye {clave} por su valor. */
+export function fmt(str: string | undefined, vars: Record<string, string | number>): string {
+  return Object.keys(vars).reduce((a, k) => a.replaceAll(`{${k}}`, String(vars[k])), str ?? "");
 }

@@ -1,7 +1,9 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 
-export function Editor({ id, initial }: { id: string; initial: string }) {
+type EditorLabels = { export: string; saved: string; saving: string; copy: string; copied: string };
+export function Editor({ id, initial, labels }: { id: string; initial: string; labels: EditorLabels }) {
+  const L = labels; const exportLabel = L.export;
   const [text, setText] = useState(initial);
   const [saved, setSaved] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -23,10 +25,10 @@ export function Editor({ id, initial }: { id: string; initial: string }) {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 10 }}>
-        <span className="muted" style={{ fontSize: 13 }}>{saved ? "Guardado ✓" : "Guardando…"}</span>
+        <span className="muted" style={{ fontSize: 13 }}>{saved ? L.saved : L.saving}</span>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <button className="btn btn-ghost" style={{ fontSize: 14, padding: "9px 16px" }} onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>{copied ? "¡Copiado!" : "Copiar"}</button>
-          <span className="muted" style={{ fontSize: 13 }}>Descargar:</span>
+          <button className="btn btn-ghost" style={{ fontSize: 14, padding: "9px 16px" }} onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>{copied ? L.copied : L.copy}</button>
+          <span className="muted" style={{ fontSize: 13 }}>{exportLabel}</span>
           {dl("txt")}{dl("srt")}{dl("docx")}{dl("pdf")}{dl("csv")}
         </div>
       </div>

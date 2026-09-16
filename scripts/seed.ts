@@ -44,7 +44,7 @@ await p.user.upsert({
 // 2) Textos (SiteContent) por idioma
 for (const locale of LOCALE_CODES) {
   const tr = locale === DEFAULT_LOCALE ? {} : (TRANSLATIONS[locale] || {});
-  const lg = locale === DEFAULT_LOCALE ? {} : (LEGAL_TRANSLATIONS[locale] || {});
+  const lg = locale === DEFAULT_LOCALE ? {} : (LEGAL_TRANSLATIONS[locale] || LEGAL_TRANSLATIONS.en || {});
   for (const c of DEFAULT_CONTENT) {
     let value = locale === DEFAULT_LOCALE ? c.value : (lg[c.key] ?? tr[c.key] ?? c.value);
     if (c.key === "checkout.legal") value = legalHtml(locale);              // legal completo (HTML) por idioma

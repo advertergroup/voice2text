@@ -18,6 +18,14 @@ export function urlLanding(locale: string, slug: string): string {
   return SITE + localePath(locale, `/l/${slug}`);
 }
 
+/** Slug equivalente del mismo ángulo en otro idioma (null si no hay). */
+export function slugEquivalente(slug: string, locale: string): string | null {
+  for (const grupo of Object.values(GRUPOS_LANDING)) {
+    if (Object.values(grupo).includes(slug)) return grupo[locale] || null;
+  }
+  return null;
+}
+
 /** Si el slug pertenece a un grupo, devuelve las alternativas por idioma (para hreflang). */
 export function alternativasHreflang(slug: string): Record<string, string> | null {
   for (const grupo of Object.values(GRUPOS_LANDING)) {

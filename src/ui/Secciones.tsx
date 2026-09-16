@@ -6,7 +6,7 @@ import { t } from "../lib/content.ts";
  * iconos de línea y CTA píldora. Las usan la home y todas las landings.
  */
 
-const PASO_LABEL: Record<string, string> = { es: "Paso", en: "Step", pt: "Passo", fr: "Étape", de: "Schritt", it: "Passo", nl: "Stap", pl: "Krok" };
+const PASO_LABEL: Record<string, string> = { es: "Paso", en: "Step", pt: "Passo", fr: "Étape", de: "Schritt", it: "Passo", nl: "Stap", pl: "Krok", el: "Βήμα" };
 
 const Hoja = ({ x = 0, y = 0, w = 74, h = 92 }: { x?: number; y?: number; w?: number; h?: number }) => (
   <g transform={`translate(${x},${y})`}>

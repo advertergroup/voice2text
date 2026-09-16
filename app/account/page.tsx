@@ -6,7 +6,7 @@ import { getPrisma } from "../../src/db/client.ts";
 import { AppShell } from "../../src/ui/AppShell.tsx";
 import { CancelSubButton } from "../../src/ui/CancelSubButton.tsx";
 import { formatPrice, isLocale, DEFAULT_LOCALE, LANG_COOKIE } from "../../src/lib/locale.ts";
-import { ui } from "../../src/lib/ui.ts";
+import { ui, fmt } from "../../src/lib/ui.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -28,13 +28,13 @@ export default async function Account({ searchParams }: { searchParams: Promise<
   };
   const activa = user.subStatus === "ACTIVE" || user.subStatus === "TRIAL";
   const fecha = user.currentPeriodEnd ? new Date(user.currentPeriodEnd).toLocaleDateString(locale) : null;
-  const precioPlan = plan ? `${formatPrice(plan.precioCent, plan.moneda)}/${locale === "es" ? "mes" : "mo"}` : null;
+  const precioPlan = plan ? `${formatPrice(plan.precioCent, plan.moneda)}/${s.per_month}` : null;
 
   return (
-    <AppShell brand={t(c, "brand.name")} email={user.email} role={user.role} active="account">
+    <AppShell brand={t(c, "brand.name")} email={user.email} role={user.role} active="account" locale={locale}>
       <h1 style={{ fontSize: 26, marginTop: 0 }}>{s.acct_title}</h1>
       {sp.canceled && <div className="ok">✓ {s.acct_cancel_ok}</div>}
-      {sp.error === "cancel" && <div className="err">✗ No se pudo cancelar. Escríbenos a {t(c, "contact.email")}.</div>}
+      {sp.error === "cancel" && <div className="err">{fmt(s.acct_cancel_err, { email: t(c, "contact.email") })}</div>}
 
       <div className="card" style={{ maxWidth: 560 }}>
         <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 12, fontSize: 15 }}>

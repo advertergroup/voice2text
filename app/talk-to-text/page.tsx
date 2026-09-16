@@ -15,14 +15,8 @@ export async function generateMetadata() {
   const locale = await getLocale();
   const c = await loadContent(locale);
   const brand = t(c, "brand.name");
-  if (locale === "es") return {
-    title: `Hablar a Texto — Dicta con tu voz y conviértela en texto | ${brand}`,
-    description: "Convierte tu voz en texto al instante: pulsa el micrófono, habla y descarga la transcripción en TXT, DOCX, PDF o SRT. Más de 90 idiomas.",
-  };
-  return {
-    title: `Talk to Text — Speak & Convert Your Voice to Text Online | ${brand}`,
-    description: "Free talk to text online: tap the mic, speak, and get an instant transcription. Download as TXT, DOCX, PDF or SRT. 90+ languages, nothing to install.",
-  };
+  const s = ui(locale);
+  return { title: `${s.tt_meta_title} | ${brand}`, description: s.tt_meta_desc };
 }
 
 export default async function TalkToText() {

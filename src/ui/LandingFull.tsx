@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
+import { slugEquivalente } from "../lib/landing-groups.ts";
 import { cookies } from "next/headers";
 import { loadContent, t, getLocale } from "../lib/content.ts";
 import { getCurrentUser } from "../../src/auth/session.ts";
@@ -18,17 +19,23 @@ import { alternativasHreflang } from "../lib/landing-groups.ts";
  * y CTA. La usan /l/[slug] y las rutas espejo (/free/transcription, …).
  */
 
+/**
+ * Landing en el idioma pedido. SIN fallback a otro idioma: antes /en/l/audio-a-texto servía el cuerpo en español con
+ * menú/pasos/CTA en inglés. Si no existe en ese idioma, `destinoAlternativo` dice adónde redirigir (equivalente del
+ * mismo ángulo en ese idioma, o la URL del idioma en que sí existe) y si no hay nada → 404.
+ */
 export async function findLanding(slug: string, locale: string) {
   const prisma = await getPrisma();
-  let lp = await prisma.landingPage.findUnique({ where: { slug_locale: { slug, locale } } });
-  if (!lp && locale !== DEFAULT_LOCALE) {
-    lp = await prisma.landingPage.findUnique({ where: { slug_locale: { slug, locale: DEFAULT_LOCALE } } });
-  }
-  if (!lp && locale !== "en") {
-    // Landings de campaña en inglés sin versión en el idioma pedido → EN.
-    lp = await prisma.landingPage.findUnique({ where: { slug_locale: { slug, locale: "en" } } });
-  }
-  return lp;
+  return prisma.landingPage.findUnique({ where: { slug_locale: { slug, locale } } });
+}
+export async function destinoAlternativo(slug: string, locale: string): Promise<string | null> {
+  const eq = slugEquivalente(slug, locale);
+  if (eq && eq !== slug) return localePath(locale, `/l/${eq}`);
+  const prisma = await getPrisma();
+  const otras = await prisma.landingPage.findMany({ where: { slug, activo: true }, select: { locale: true } });
+  const pref = [DEFAULT_LOCALE, "en", ...otras.map((o) => o.locale)];
+  const loc = pref.find((l) => otras.some((o) => o.locale === l));
+  return loc ? localePath(loc, `/l/${slug}`) : null;
 }
 
 export async function landingMetadata(slug: string) {
@@ -51,7 +58,11 @@ export async function LandingFull({ slug }: { slug: string }) {
   const c = await loadContent(locale);
   const user = await getCurrentUser();
   const lp = await findLanding(slug, locale);
-  if (!lp || !lp.activo) notFound();
+  if (!lp || !lp.activo) {
+    const dest = await destinoAlternativo(slug, locale);
+    if (dest) permanentRedirect(dest);
+    notFound();
+  }
 
   const brand = t(c, "brand.name");
   const html = (lp.cuerpo as string).replaceAll("{brand}", brand);

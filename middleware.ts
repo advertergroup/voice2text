@@ -10,7 +10,15 @@ const NO_I18N = ["/dashboard", "/account", "/admin", "/pay", "/thanks"];
 
 const VID_COOKIE = "v2t_vid"; // visitante para la analítica propia (/admin/analytics)
 const RE_BOT = /bot|crawl|spider|slurp|bingpreview|facebookexternalhit|whatsapp|telegram|headless|lighthouse|pagespeed|pingdom|uptime|monitor|scanner|curl|wget|python-requests|python-urllib|go-http|okhttp|axios|node-fetch|dataprovider|semrush|ahrefs|mj12|dotbot|petalbot|bytespider|gptbot|claudebot|ccbot|amazonbot|applebot/i;
+const COOKIE_LANG_OPTS = { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" as const };
 
+/**
+ * IDIOMA: LA URL MANDA. `/it/...` se sirve en italiano, `/l/audio-a-texto` (sin prefijo) se sirve en español,
+ * y en ambos casos la cookie de idioma se ajusta a lo que se ha visto. NUNCA se redirige una página con prefijo ni una
+ * página española por la cookie o el navegador: eso mandaba tráfico de anuncios en español a `/en/...` (página mezclada)
+ * y hacía que el selector «Español» volviera al inglés. Única redirección automática: la portada `/`, según la cookie
+ * (si la hay) o el idioma del navegador.
+ */
 export function middleware(req: NextRequest, event: NextFetchEvent) {
   const { pathname, search } = req.nextUrl;
 
@@ -69,15 +77,16 @@ export function middleware(req: NextRequest, event: NextFetchEvent) {
     );
   };
 
-  // Área privada / checkout → no tocar (pero deja pasar, marcando ads si procede).
+  // Área privada / checkout → no tocar (pero deja pasar, marcando ads si procede). Su idioma sale de la cookie.
   if (NO_I18N.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     registrar(pathname, "");
     return finish(NextResponse.next());
   }
 
   const { locale, rest } = stripLocale(pathname);
+  const cookieLang = req.cookies.get(LANG_COOKIE)?.value;
 
-  // Caso 1: la URL trae prefijo de idioma (/en/...). Reescribe a la ruta real + inyecta x-locale.
+  // Caso 1: la URL trae prefijo de idioma (/en/...). Reescribe a la ruta real + inyecta x-locale. La cookie sigue a la URL.
   if (locale !== DEFAULT_LOCALE) {
     const url = req.nextUrl.clone();
     url.pathname = rest;
@@ -85,32 +94,30 @@ export function middleware(req: NextRequest, event: NextFetchEvent) {
     headers.set("x-locale", locale);
     headers.set("x-pathname", rest);
     const res = NextResponse.rewrite(url, { request: { headers } });
-    res.cookies.set(LANG_COOKIE, locale, { path: "/", maxAge: 60 * 60 * 24 * 365 });
+    if (cookieLang !== locale) res.cookies.set(LANG_COOKIE, locale, COOKIE_LANG_OPTS);
     registrar(rest || "/", locale);
     return finish(res);
   }
 
-  // Caso 2: sin prefijo → idioma por defecto (es), salvo que el usuario prefiera otro
-  // (cookie o navegador) y aún no lo hayamos fijado → redirige a la versión con prefijo.
-  const cookieLang = req.cookies.get(LANG_COOKIE)?.value;
-  const preferred = LOCALE_CODES.includes(cookieLang || "")
-    ? cookieLang!
-    : detectFromAcceptLanguage(req.headers.get("accept-language"));
-
-  if (preferred && preferred !== DEFAULT_LOCALE && LOCALE_CODES.includes(preferred)) {
-    const url = req.nextUrl.clone();
-    url.pathname = (pathname === "/" ? "" : pathname);
-    url.pathname = "/" + preferred + url.pathname;
-    url.search = search;
-    return finish(NextResponse.redirect(url)); // el pageview se registra al servir la URL destino
+  // Caso 2: SOLO la portada "/" se redirige al idioma preferido (cookie, o navegador si no hay cookie).
+  if (pathname === "/") {
+    const preferred = LOCALE_CODES.includes(cookieLang || "") ? cookieLang! : detectFromAcceptLanguage(req.headers.get("accept-language"));
+    if (preferred !== DEFAULT_LOCALE && LOCALE_CODES.includes(preferred)) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/" + preferred;
+      url.search = search;
+      return finish(NextResponse.redirect(url)); // el pageview se registra al servir la URL destino
+    }
   }
 
-  // Idioma base: sirve tal cual, marcando x-locale=es.
+  // Caso 3: ruta sin prefijo = español, tal cual (landings de anuncios, selector «Español», enlaces directos). Cookie → es.
   const headers = new Headers(req.headers);
   headers.set("x-locale", DEFAULT_LOCALE);
   headers.set("x-pathname", pathname);
   registrar(pathname, DEFAULT_LOCALE);
-  return finish(NextResponse.next({ request: { headers } }));
+  const res = NextResponse.next({ request: { headers } });
+  if (cookieLang !== DEFAULT_LOCALE) res.cookies.set(LANG_COOKIE, DEFAULT_LOCALE, COOKIE_LANG_OPTS);
+  return finish(res);
 }
 
 export const config = {

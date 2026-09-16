@@ -71,7 +71,7 @@ export function Resultado({ tr, precio, ctaHref, trialDays = 7, todayLabel = "",
       )}
       {tr.status === "ERROR" && <div className="err">{tr.error || s.err}</div>}
 
-      {tr.status === "DONE" && !tr.locked && (tr.texto ? <Editor id={tr.id} initial={tr.texto} /> : <ReuploadForm id={tr.id} s={s} />)}
+      {tr.status === "DONE" && !tr.locked && (tr.texto ? <Editor id={tr.id} initial={tr.texto} labels={{ export: s.export_label!, saved: s.ed_saved!, saving: s.ed_saving!, copy: s.ed_copy!, copied: s.ed_copied! }} /> : <ReuploadForm id={tr.id} s={s} />)}
 
       {/* Comprador esperando el desbloqueo en 2º plano: barra que sondea hasta
           locked=false y recarga sola — NUNCA el candado a quien ya ha pagado. */}

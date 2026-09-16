@@ -31,8 +31,8 @@ export default async function Detalle({ params }: { params: Promise<{ id: string
   const todayLabel = P.todayLabel;
 
   return (
-    <AppShell brand={t(c, "brand.name")} email={user.email} role={user.role} active="dash">
-      <a href="/dashboard" className="muted" style={{ fontSize: 14 }}>← Volver</a>
+    <AppShell brand={t(c, "brand.name")} email={user.email} role={user.role} active="dash" locale={locale}>
+      <a href="/dashboard" className="muted" style={{ fontSize: 14 }}>{ui(locale).back}</a>
       <Resultado tr={tr as any} s={ui(locale)} precio={precio} ctaHref={`/pay?t=${tr.id}`} trialDays={trialDays} todayLabel={todayLabel} desbloqueando={desbloqueando} />
     </AppShell>
   );

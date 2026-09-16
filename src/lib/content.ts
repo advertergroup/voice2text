@@ -151,7 +151,8 @@ export async function loadContent(locale: string = DEFAULT_LOCALE): Promise<Reco
   if (lang !== DEFAULT_LOCALE) {
     const tr = TRANSLATIONS[lang] || {};
     for (const k of Object.keys(tr)) map[k] = tr[k]!;
-    const lg = LEGAL_TRANSLATIONS[lang] || {};
+    // Legales: si el idioma no tiene traducción propia, se sirven en INGLÉS (nunca en español a un visitante griego, etc.).
+    const lg = LEGAL_TRANSLATIONS[lang] || LEGAL_TRANSLATIONS.en || {};
     for (const k of Object.keys(lg)) map[k] = lg[k]!;
   }
   // 3) overrides de BD para ese idioma
